@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
+import { fetchUserChallenges, fetchUserBadges, fetchUserFriends, fetchUserCheckins } from '../services/apiService';
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,7 +16,27 @@ const HomeScreen = () => {
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const navigation = useNavigation();
 
-  const challenges = currentUserProfile.currentChallenges;
+  const [challenges, setChallenges] = useState([]);
+  const [badges, setBadges] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [checkins, setCheckins] = useState([]);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userChallenges = await fetchUserChallenges(userId);
+        const userBadges = await fetchUserBadges(userId);
+        setChallenges(userChallenges);
+        setBadges(userBadges);
+        setFriends(userBadges);
+        setCheckins(userBadges);
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+
+    loadUserData();
+  }, [userId]);
 
   const handleCheckmarkPress = (challenge) => {
     setSelectedChallenge(challenge);

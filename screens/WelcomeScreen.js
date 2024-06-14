@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Button, Modal, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
 import Icon from 'react-native-vector-icons/FontAwesome';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { AuthContext } from '../context/AuthContext';
 
 const WelcomeScreen = () => {
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [signUpModalVisible, setSignUpModalVisible] = useState(false);
-
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { logIn, userId } = useContext(AuthContext);  // Use logIn and userId from AuthContext
   const navigation = useNavigation();
+
+  const handleLogin = async () => {
+    try {
+      await logIn(email, password);
+      navigation.navigate('Home', { userId });  // Navigate to Home with userId as a parameter
+      setLoginModalVisible(false);  // Close the modal on success
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,9 +46,20 @@ const WelcomeScreen = () => {
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Welcome Back</Text>
-            <TextInput placeholder="Email" style={styles.input} />
-            <TextInput placeholder="Password" secureTextEntry={true} style={styles.input} />
-            <TouchableOpacity style={styles.submitButton} onPress={() => navigation.navigate('Home')}>
+            <TextInput
+              placeholder="Email"
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              placeholder="Password"
+              secureTextEntry={true}
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity style={styles.submitButton} onPress={handleLogin}>
               <Text style={styles.submitButtonText}>Login</Text>
             </TouchableOpacity>
           </View>
@@ -133,14 +155,11 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     borderRadius: 10,
     paddingHorizontal: 40,
-    borderRadius: 5,
     marginBottom: 10,
   },
   submitButtonText: {
     color: '#000000',
     fontSize: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
 });
 
