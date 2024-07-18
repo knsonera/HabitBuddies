@@ -13,10 +13,10 @@ const Footer = () => {
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <MaterialCommunityIcons name="home" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('ChallengeList')}>
+        <TouchableOpacity onPress={() => navigation.navigate('StartQuest')}>
           <MaterialCommunityIcons name="trophy" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('StartChallenge')}>
+        <TouchableOpacity onPress={() => navigation.navigate('StartQuest')}>
           <MaterialCommunityIcons name="plus" size={30} color="black" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Social')}>

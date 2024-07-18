@@ -20,7 +20,7 @@ const ProfileScreen = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
           <View style={styles.topSection}>
-            <Image source={{ uri: userProfile.avatar }} style={styles.avatar} />
+            <Image source={{ uri: userProfile.avatar_image }} style={styles.avatar} />
             <Text style={styles.fullName}>{userProfile.fullName}</Text>
             <Text style={styles.login}>{userProfile.login}</Text>
           </View>
@@ -47,8 +47,8 @@ const ProfileScreen = ({ route, navigation }) => {
               </View>
               <View style={styles.summaryItem}>
                 <MaterialCommunityIcons name="trophy" size={24} color="#000000" />
-                <Text style={styles.summaryTitle}>Challenges</Text>
-                <Text style={styles.summaryValue}>{userProfile.challenges}</Text>
+                <Text style={styles.summaryTitle}>Quests</Text>
+                <Text style={styles.summaryValue}>{userProfile.quests}</Text>
               </View>
               <TouchableOpacity style={styles.summaryItem} onPress={() => setModalVisible(true)}>
                 <Icon name="users" size={24} color="#000000" />
@@ -73,42 +73,42 @@ const ProfileScreen = ({ route, navigation }) => {
           {!isCurrentUser && (
             <>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Current Challenges</Text>
-                <View style={styles.challengesSection}>
-                  {userProfile.currentChallenges.map((challenge, index) => (
+                <Text style={styles.sectionTitle}>Current Quests</Text>
+                <View style={styles.questsSection}>
+                  {userProfile.currentQuests.map((quest, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.challengeItem}
-                      onPress={() => navigation.navigate('Challenge', { challengeDetails: challenge })}
+                      style={styles.questItem}
+                      onPress={() => navigation.navigate('Quest', { questDetails: quest })}
                     >
-                      <View style={styles.challengeContent}>
-                        {challenge.library === 'FontAwesome' ? (
-                          <Icon name={challenge.icon} size={24} style={styles.challengeIcon} />
+                      <View style={styles.questContent}>
+                        {quest.library === 'FontAwesome' ? (
+                          <Icon name={quest.icon} size={24} style={styles.questIcon} />
                         ) : (
-                          <MaterialCommunityIcons name={challenge.icon} size={24} style={styles.challengeIcon} />
+                          <MaterialCommunityIcons name={quest.icon} size={24} style={styles.questIcon} />
                         )}
-                        <Text style={styles.challengeText}>{challenge.name}</Text>
+                        <Text style={styles.questText}>{quest.name}</Text>
                       </View>
                     </TouchableOpacity>
                   ))}
                 </View>
                 </View>
                 <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Past Challenges</Text>
-                <View style={styles.challengesSection}>
-                  {userProfile.pastChallenges.map((challenge, index) => (
+                <Text style={styles.sectionTitle}>Past Quests</Text>
+                <View style={styles.questsSection}>
+                  {userProfile.pastQuests.map((quest, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.challengeItem}
-                      onPress={() => navigation.navigate('Challenge', { challengeDetails: challenge })}
+                      style={styles.questItem}
+                      onPress={() => navigation.navigate('Quest', { questDetails: quest })}
                     >
-                      <View style={styles.challengeContent}>
-                        {challenge.library === 'FontAwesome' ? (
-                          <Icon name={challenge.icon} size={24} style={styles.challengeIcon} />
+                      <View style={styles.questContent}>
+                        {quest.library === 'FontAwesome' ? (
+                          <Icon name={quest.icon} size={24} style={styles.questIcon} />
                         ) : (
-                          <MaterialCommunityIcons name={challenge.icon} size={24} style={styles.challengeIcon} />
+                          <MaterialCommunityIcons name={quest.icon} size={24} style={styles.questIcon} />
                         )}
-                        <Text style={styles.challengeText}>{challenge.name}</Text>
+                        <Text style={styles.questText}>{quest.name}</Text>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -161,7 +161,7 @@ const ProfileScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background 
+    backgroundColor: '#FFFFFF', // White background
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -241,11 +241,11 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     width: '100%',
   },
-  challengesSection: {
+  questsSection: {
     alignItems: 'flex-start',
     width: '100%',
   },
-  challengeItem: {
+  questItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 10,
@@ -259,14 +259,14 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
-  challengeContent: {
+  questContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  challengeIcon: {
+  questIcon: {
     marginRight: 10,
   },
-  challengeText: {
+  questText: {
     fontSize: 18,
     color: '#000',
   },

@@ -4,28 +4,13 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-const updates = [
-  { name: 'Alice', time: '2 hours ago', description: 'Started a new challenge: 30-day yoga mastery.' },
-  { name: 'Bob', time: '5 hours ago', description: 'Completed a 7-day meditation challenge!' },
-  { name: 'Charlie', time: '1 day ago', description: 'Achieved 10000 points milestone.' },
-  { name: 'Daisy', time: '2 days ago', description: 'Finished the Reading Challenge: 3 books in a month.' },
-  { name: 'Eve', time: '3 days ago', description: 'Started a new challenge: Daily Running.' },
-];
-
 const SocialScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>Feed</Text>
-          {updates.map((update, index) => (
-            <View key={index} style={styles.updateContainer}>
-              <Text style={styles.name}>{update.name}</Text>
-              <Text style={styles.time}>{update.time}</Text>
-              <Text style={styles.description}>{update.description}</Text>
-            </View>
-          ))}
+          <Text style={styles.title}>News Feed</Text>
         </View>
       </ScrollView>
       <Footer />
@@ -49,7 +34,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#FFFFFF',
   },
   title: {
     fontSize: 24,

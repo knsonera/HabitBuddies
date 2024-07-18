@@ -6,8 +6,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-const ChallengeScreen = ({ route }) => {
-  const { challengeDetails } = route.params;
+const QuestScreen = ({ route }) => {
+  const { questDetails } = route.params;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -16,13 +16,13 @@ const ChallengeScreen = ({ route }) => {
         <View style={styles.contentContainer}>
 
           <View style={styles.headerContainer}>
-            {challengeDetails.library === 'FontAwesome' ? (
-              <Icon name={challengeDetails.icon} size={50} color="#000" />
+            {questDetails.library === 'FontAwesome' ? (
+              <Icon name={questDetails.icon} size={50} color="#000" />
             ) : (
-              <MaterialCommunityIcons name={challengeDetails.icon} size={50} color="#000" />
+              <MaterialCommunityIcons name={questDetails.icon} size={50} color="#000" />
             )}
-            <Text style={styles.challengeName}>{challengeDetails.name}</Text>
-            <Text style={styles.participants}>Participants: {challengeDetails.participants}</Text>
+            <Text style={styles.challengeName}>{questDetails.name}</Text>
+            <Text style={styles.participants}>Participants: {questDetails.participants}</Text>
           </View>
 
           <View style={styles.buttonContainer}>
@@ -37,10 +37,10 @@ const ChallengeScreen = ({ route }) => {
           </View>
 
           <View style={styles.detailsContainer}>
-            <Text style={styles.detailsText}>Description: {challengeDetails.description}</Text>
-            <Text style={styles.detailsText}>Duration: {challengeDetails.duration}</Text>
-            <Text style={styles.detailsText}>Frequency: {challengeDetails.frequency}</Text>
-            <Text style={styles.detailsText}>Time: {challengeDetails.time}</Text>
+            <Text style={styles.detailsText}>Description: {questDetails.description}</Text>
+            <Text style={styles.detailsText}>Duration: {questDetails.duration}</Text>
+            <Text style={styles.detailsText}>Frequency: {questDetails.frequency}</Text>
+            <Text style={styles.detailsText}>Time: {questDetails.time}</Text>
           </View>
 
           <View style={styles.actionButtonContainer}>
@@ -50,11 +50,11 @@ const ChallengeScreen = ({ route }) => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
               <Icon name="edit" size={20} color="#000" />
-              <Text style={styles.actionButtonText}>Edit Challenge</Text>
+              <Text style={styles.actionButtonText}>Edit Quest</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
               <Icon name="times-circle" size={20} color="#000" />
-              <Text style={styles.actionButtonText}>End Challenge</Text>
+              <Text style={styles.actionButtonText}>End Quest</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -147,4 +147,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChallengeScreen;
+export default QuestScreen;

@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-const StartChallengeScreen = () => {
+const StartQuestScreen = () => {
   const navigation = useNavigation();
 
   return (
@@ -15,13 +15,13 @@ const StartChallengeScreen = () => {
         <View style={styles.contentContainer}>
           <TouchableOpacity
             style={styles.halfContainer}
-            onPress={() => navigation.navigate('ChallengeList')}
+            onPress={() => navigation.navigate('QuestTemplates')}
           >
             <Text style={styles.halfText}>Choose Template</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.halfContainer}
-            onPress={() => navigation.navigate('NewChallenge')}
+            onPress={() => navigation.navigate('NewQuest')}
           >
             <Text style={styles.halfText}>Create Your Own</Text>
           </TouchableOpacity>
@@ -72,4 +72,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StartChallengeScreen;
+export default StartQuestScreen;

@@ -1,26 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, Modal, Button } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, Modal } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-
-const icons = [
-  { name: 'heart', library: 'FontAwesome' },
-  { name: 'trophy', library: 'FontAwesome' },
-  { name: 'book', library: 'FontAwesome' },
-  { name: 'meditation', library: 'MaterialCommunityIcons' },
-  { name: 'yoga', library: 'MaterialCommunityIcons' },
-  { name: 'apple', library: 'FontAwesome' },
-  { name: 'ban', library: 'FontAwesome' },
-  { name: 'tint', library: 'FontAwesome' },
-  { name: 'pencil', library: 'FontAwesome' },
-  { name: 'edit', library: 'FontAwesome' },
-  { name: 'leaf', library: 'FontAwesome' },
-  { name: 'coffee', library: 'FontAwesome' },
-];
+import { createQuest, fetchAllIcons } from '../services/apiService'; // Import the necessary functions
+import { AuthContext } from '../context/AuthContext'; // Import AuthContext
 
 const durationUnits = [
   { label: 'Days', value: 'days' },
@@ -42,21 +29,45 @@ const times = [
   { label: 'Custom', value: 'custom' },
 ];
 
-const NewChallengeScreen = () => {
+const NewQuestScreen = ({ route }) => {
+  const { questDetails } = route.params || {}; // Destructure the passed quest details
   const navigation = useNavigation();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const { authToken } = useContext(AuthContext); // Use AuthContext to get the authToken
+  const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
+  const [description, setDescription] = useState(questDetails ? questDetails.description : '');
   const [duration, setDuration] = useState('');
   const [durationUnit, setDurationUnit] = useState('days');
-  const [frequency, setFrequency] = useState('daily');
-  const [time, setTime] = useState('evening');
+  const [frequency, setFrequency] = useState(questDetails ? questDetails.checkin_frequency : 'daily');
+  const [time, setTime] = useState(questDetails ? questDetails.time : 'evening');
   const [zoomLink, setZoomLink] = useState('');
-  const [icon, setIcon] = useState(null);
+  const [icon, setIcon] = useState(questDetails ? questDetails.icon : null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [icons, setIcons] = useState([]);
 
   const [openDurationUnit, setOpenDurationUnit] = useState(false);
   const [openFrequency, setOpenFrequency] = useState(false);
   const [openTime, setOpenTime] = useState(false);
+
+  useEffect(() => {
+    const fetchIcons = async () => {
+      try {
+        const response = await fetchAllIcons();
+        setIcons(response);
+      } catch (error) {
+        console.error('Error fetching icons:', error);
+      }
+    };
+
+    fetchIcons();
+  }, []);
+
+  useEffect(() => {
+    if (questDetails?.duration) {
+      const [dur, unit] = questDetails.duration.split(' ');
+      setDuration(dur);
+      setDurationUnit(unit);
+    }
+  }, [questDetails]);
 
   const validateForm = () => {
     if (!name || !description || !duration || !zoomLink) {
@@ -66,22 +77,28 @@ const NewChallengeScreen = () => {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
       const newChallenge = {
-        id: Math.random().toString(),
-        name,
+        quest_name: name,
         description,
         duration: `${duration} ${durationUnit}`,
-        frequency,
+        checkin_frequency: frequency,
         time,
-        zoomLink,
-        icon: icon.name,
-        library: icon.library,
-        participants: 0,
+        icon_id: icon?.icon_id || null, // Assuming icon object has icon_id property
+        start_date: new Date().toISOString(), // Use the current date for start_date
+        end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
+        category_id: 1 // Default category_id, replace as needed
       };
-      console.log(newChallenge);
-      alert('Challenge created successfully!');
+
+      try {
+        await createQuest(newChallenge, authToken);
+        alert('Quest started successfully!');
+        navigation.navigate('Home');
+      } catch (error) {
+        console.error('Failed to start a quest:', error);
+        alert('Failed to start a quest.');
+      }
     }
   };
 
@@ -95,10 +112,10 @@ const NewChallengeScreen = () => {
 
   const renderForm = () => (
     <View style={styles.contentContainer}>
-      <Text style={styles.title}>New Challenge</Text>
+      <Text style={styles.title}>New Quest</Text>
       <TextInput
         style={styles.input}
-        placeholder="Challenge Name"
+        placeholder="Quest Name"
         value={name}
         onChangeText={setName}
       />
@@ -164,7 +181,7 @@ const NewChallengeScreen = () => {
         {icon && renderIcon(icon)}
       </TouchableOpacity>
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Create Challenge</Text>
+        <Text style={styles.submitButtonText}>Start a Quest</Text>
       </TouchableOpacity>
     </View>
   );
@@ -309,4 +326,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewChallengeScreen;
+export default NewQuestScreen;

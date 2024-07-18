@@ -1,0 +1,108 @@
+{
+    "icons": [
+        {
+            "name": "trophy",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "book",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "meditation",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "yoga",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "heart",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "apple",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "ban",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "tint",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "pencil",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "edit",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "leaf",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "coffee",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "running",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "dumbbell",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "biking",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "swimmer",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "walking",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "hiking",
+            "library": "FontAwesome"
+        },
+        {
+            "name": "weight",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "spa",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "face",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "flower",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "couple",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "handshake",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "people",
+            "library": "MaterialCommunityIcons"
+        },
+        {
+            "name": "family",
+            "library": "MaterialCommunityIcons"
+        }
+    ]
+}

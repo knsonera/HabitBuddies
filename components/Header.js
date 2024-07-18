@@ -1,29 +1,32 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Icon from 'react-native-vector-icons/FontAwesome';
-
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../context/AuthContext';
 
-const Header = () => {
-  // Placeholder functions and values
-  const toggleSidebar = () => alert('Sidebar toggled');
-  const userScore = 100; // Placeholder score
-  const currentStreak = 5; // Placeholder streak
-  const currentChallenge = 'Workout'; // Placeholder challenge
-
+const Header = ({ userInfo }) => {
+  const { logOut } = useContext(AuthContext);
   const navigation = useNavigation();
+
+  const handleLogout = async () => {
+    navigation.navigate('Welcome');
+    await logOut();
+  };
+
+  const goToHome = () => {
+    navigation.navigate('Home');
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={toggleSidebar}>
-          <MaterialCommunityIcons name="menu" size={30} color="black" />
+        <TouchableOpacity onPress={goToHome}>
+          <MaterialCommunityIcons name="account-group" size={30} color="black" />
         </TouchableOpacity>
-        <Text style={styles.text}>Score: {userScore}</Text>
-        <Text style={styles.text}>Streak: {currentStreak}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Welcome')}>
-          <MaterialCommunityIcons name="rocket" size={30} color="black" />
+        <Text style={styles.text}>Score: {userInfo?.game_score || 0}</Text>
+        <Text style={styles.text}>Streak: {userInfo?.streak || 0}</Text>
+        <TouchableOpacity onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={30} color="black" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

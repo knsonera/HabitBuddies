@@ -9,22 +9,84 @@ const WelcomeScreen = () => {
   const [signUpModalVisible, setSignUpModalVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { logIn, userId } = useContext(AuthContext);  // Use logIn and userId from AuthContext
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [fullname, setFullname] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const { logInUser, signUpUser } = useContext(AuthContext);
   const navigation = useNavigation();
 
   const handleLogin = async () => {
     try {
-      await logIn(email, password);
-      navigation.navigate('Home', { userId });  // Navigate to Home with userId as a parameter
-      setLoginModalVisible(false);  // Close the modal on success
+      await logInUser(email, password);
+      console.log('Login successful, navigating to Home');
+      navigation.navigate('Home');
+      setLoginModalVisible(false);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Login error:', error.message);
+      setErrorMessage(error.message);
     }
   };
+
+  const handleSignUp = async () => {
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
+
+    try {
+      await signUpUser(email, password, username, fullname);
+      console.log('Sign-up successful, navigating to Home');
+      navigation.navigate('Home');
+      setSignUpModalVisible(false);
+    } catch (error) {
+      console.error('Sign-up error:', error.message);
+      setErrorMessage(error.message);
+    }
+  };
+
+  const resetLoginForm = () => {
+    setEmail('');
+    setPassword('');
+    setErrorMessage('');
+  };
+
+  const resetSignUpForm = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setUsername('');
+    setFullname('');
+    setErrorMessage('');
+  };
+
+  const handleModalClose = (type) => {
+    if (type === 'login') {
+      setLoginModalVisible(false);
+      resetLoginForm();
+    } else {
+      setSignUpModalVisible(false);
+      resetSignUpForm();
+    }
+  };
+
+  const renderInputField = (placeholder, value, onChangeText, secureTextEntry = false) => (
+    <TextInput
+      placeholder={placeholder}
+      style={styles.input}
+      value={value}
+      autoCapitalize="none"
+      onChangeText={onChangeText}
+      secureTextEntry={secureTextEntry}
+      accessibilityLabel={placeholder}
+    />
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.appName}>Habit Buddies</Text>
+
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={() => setLoginModalVisible(true)}>
@@ -38,27 +100,16 @@ const WelcomeScreen = () => {
       <Modal
         transparent={true}
         visible={loginModalVisible}
-        onRequestClose={() => setLoginModalVisible(false)}
+        onRequestClose={() => handleModalClose('login')}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setLoginModalVisible(false)}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => handleModalClose('login')}>
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Welcome Back</Text>
-            <TextInput
-              placeholder="Email"
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-            />
-            <TextInput
-              placeholder="Password"
-              secureTextEntry={true}
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-            />
+            {renderInputField('Email', email, setEmail)}
+            {renderInputField('Password', password, setPassword, true)}
             <TouchableOpacity style={styles.submitButton} onPress={handleLogin}>
               <Text style={styles.submitButtonText}>Login</Text>
             </TouchableOpacity>
@@ -69,18 +120,20 @@ const WelcomeScreen = () => {
       <Modal
         transparent={true}
         visible={signUpModalVisible}
-        onRequestClose={() => setSignUpModalVisible(false)}
+        onRequestClose={() => handleModalClose('signUp')}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setSignUpModalVisible(false)}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => handleModalClose('signUp')}>
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Create an account</Text>
-            <TextInput placeholder="Email" style={styles.input} />
-            <TextInput placeholder="Password" secureTextEntry={true} style={styles.input} />
-            <TextInput placeholder="Confirm Password" secureTextEntry={true} style={styles.input} />
-            <TouchableOpacity style={styles.submitButton} onPress={() => navigation.navigate('Home')}>
+            {renderInputField('Full Name', fullname, setFullname)}
+            {renderInputField('Username', username, setUsername)}
+            {renderInputField('Email', email, setEmail)}
+            {renderInputField('Password', password, setPassword, true)}
+            {renderInputField('Confirm Password', confirmPassword, setConfirmPassword, true)}
+            <TouchableOpacity style={styles.submitButton} onPress={handleSignUp}>
               <Text style={styles.submitButtonText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
@@ -101,6 +154,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#000',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginVertical: 10,
   },
   buttonContainer: {
     flexDirection: 'row',

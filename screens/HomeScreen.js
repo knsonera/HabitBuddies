@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useRoute } from '@react-navigation/native';
-import { fetchUserChallenges, fetchUserBadges, fetchUserFriends, fetchUserCheckins } from '../services/apiService';
-
+import { fetchUserQuests, fetchUserInfo } from '../services/apiService';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { currentUserProfile, friendsList } from '../assets/mockData';
+import { AuthContext } from '../context/AuthContext';
 
 const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [selectedQuest, setSelectedQuest] = useState(null);
   const navigation = useNavigation();
+  const { userId, userInfo, refreshTokens } = useContext(AuthContext);
 
-  const [challenges, setChallenges] = useState([]);
+  const [quests, setQuests] = useState([]);
   const [badges, setBadges] = useState([]);
   const [friends, setFriends] = useState([]);
   const [checkins, setCheckins] = useState([]);
@@ -24,12 +23,17 @@ const HomeScreen = () => {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const userChallenges = await fetchUserChallenges(userId);
-        const userBadges = await fetchUserBadges(userId);
-        setChallenges(userChallenges);
-        setBadges(userBadges);
-        setFriends(userBadges);
-        setCheckins(userBadges);
+        await refreshTokens(); // Ensure tokens are refreshed if necessary
+        // Fetch additional data as needed
+        // const userQuests = await fetchUserQuests(userId);
+        // const userBadges = await fetchUserBadges(userId);
+        // const userFriends = await fetchUserFriends(userId);
+        // const userCheckins = await fetchUserCheckins(userId);
+
+        // setQuests(userQuests);
+        // setBadges(userBadges);
+        // setFriends(userFriends);
+        // setCheckins(userCheckins);
       } catch (error) {
         console.error('Failed to load user data:', error);
       }
@@ -38,42 +42,77 @@ const HomeScreen = () => {
     loadUserData();
   }, [userId]);
 
-  const handleCheckmarkPress = (challenge) => {
-    setSelectedChallenge(challenge);
+  const handleCheckmarkPress = (quest) => {
+    setSelectedQuest(quest);
     setModalVisible(true);
   };
 
-  const handleChallengePress = (challenge) => {
-    navigation.navigate('Challenge', { challengeDetails: challenge });
+  const handleQuestPress = (quest) => {
+    navigation.navigate('Quest', { questDetails: quest });
+  };
+
+  const handleStartQuestPress = () => {
+    navigation.navigate('StartQuest');
+  };
+
+  const handleTimerCounter = () => {
+    setModalVisible(false);
+  };
+
+  const handleMarkAsDone = () => {
+    setModalVisible(false);
+  };
+
+  const handleOpenChat = () => {
+    setModalVisible(false);
+  };
+
+  const handleVideoCall = () => {
+    setModalVisible(false);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header />
+      <Header userInfo={userInfo} />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
-          <Text style={styles.headerText}>Your Challenges</Text>
-          {challenges.map((challenge) => (
-            <TouchableOpacity key={challenge.id} style={styles.challengeContainer} onPress={() => handleChallengePress(challenge)}>
-              {challenge.library === 'FontAwesome' ? (
-                <Icon name={challenge.icon} size={30} style={styles.challengeIcon} />
-              ) : (
-                <MaterialCommunityIcons name={challenge.icon} size={30} style={styles.challengeIcon} />
+          <Text style={styles.headerText}>Your Quests</Text>
+          {quests.length === 0 ? (
+            <View style={styles.noQuestsContainer}>
+              {userInfo && (
+                <>
+                  <Text style={styles.noQuestsText}>Hello, {userInfo.fullname}!</Text>
+                </>
               )}
-              <Text style={styles.challengeName}>{challenge.name}</Text>
-              <TouchableOpacity
-                style={styles.checkmarkButton}
-                onPress={() => handleCheckmarkPress(challenge)}
-              >
-                <Icon name="check" size={30} style={styles.checkmarkIcon} />
+              <Text style={styles.noQuestsText}>You have no quests.</Text>
+              <Text style={styles.noQuestsText}>
+                Start your first quest{' '}
+                <Text style={styles.linkText} onPress={handleStartQuestPress}>here</Text>.
+              </Text>
+            </View>
+          ) : (
+            quests.map((quest) => (
+              <TouchableOpacity key={quest.user_quest_id} style={styles.questContainer} onPress={() => handleQuestPress(quest)}>
+                {quest.icon_library === 'FontAwesome' ? (
+                  <Icon name={quest.icon_name} size={30} style={styles.questIcon} />
+                ) : (
+                  <MaterialCommunityIcons name={quest.icon_name} size={30} style={styles.questIcon} />
+                )}
+                <Text style={styles.questName}>{quest.quest_name}</Text>
+                <TouchableOpacity
+                  style={styles.checkmarkButton}
+                  onPress={() => handleCheckmarkPress(quest)}
+                >
+                  <Icon name="check" size={30} style={styles.checkmarkIcon} />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
+            ))
+          )}
         </View>
       </ScrollView>
       <Footer />
 
-      {selectedChallenge && (
+      {selectedQuest && (
         <Modal
           transparent={true}
           visible={modalVisible}
@@ -84,16 +123,16 @@ const HomeScreen = () => {
               <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                 <Icon name="close" size={24} color="#000" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => {}}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleTimerCounter}>
                 <Text style={styles.modalButtonText}>Timer/Counter</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => {}}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleMarkAsDone}>
                 <Text style={styles.modalButtonText}>Mark as Done</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => {}}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleOpenChat}>
                 <Text style={styles.modalButtonText}>Open Chat</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => {}}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleVideoCall}>
                 <Text style={styles.modalButtonText}>Video Call</Text>
               </TouchableOpacity>
             </View>
@@ -107,7 +146,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -126,7 +165,28 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontWeight: 'bold',
   },
-  challengeContainer: {
+  userInfoText: {
+    fontSize: 16,
+    color: '#000',
+    textAlign: 'center',
+    marginVertical: 5,
+  },
+  noQuestsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noQuestsText: {
+    fontSize: 18,
+    color: '#000',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  linkText: {
+    color: '#1E90FF',
+    textDecorationLine: 'underline',
+  },
+  questContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
@@ -134,12 +194,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#f0f0f0',
   },
-  challengeIcon: {
+  questIcon: {
     fontSize: 30,
     width: 30,
     marginRight: 20,
   },
-  challengeName: {
+  questName: {
     flex: 1,
     fontSize: 20,
     color: '#000000',
