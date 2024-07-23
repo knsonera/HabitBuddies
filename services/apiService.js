@@ -125,3 +125,15 @@ export const fetchUserInfo = async () => {
     const userId = await getUserId();
     return request(`/users/${userId}`, 'GET');
 };
+
+// Create a new quest
+export const createQuest = async (questData) => {
+    return request('/quests', 'POST', questData);
+};
+
+// Fetch user quests
+export const fetchUserQuests = async () => {
+    const userId = await getUserId();
+    const authToken = await getAuthToken();
+    return request(`/users/${userId}/quests`, 'GET', null, authToken);
+};

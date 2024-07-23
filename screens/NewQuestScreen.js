@@ -6,8 +6,9 @@ import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { createQuest, fetchAllIcons } from '../services/apiService'; // Import the necessary functions
+import { createQuest } from '../services/apiService'; // Import the necessary functions
 import { AuthContext } from '../context/AuthContext'; // Import AuthContext
+import iconsData from '../assets/icons.json'; // Import icons.json
 
 const durationUnits = [
   { label: 'Days', value: 'days' },
@@ -32,7 +33,7 @@ const times = [
 const NewQuestScreen = ({ route }) => {
   const { questDetails } = route.params || {}; // Destructure the passed quest details
   const navigation = useNavigation();
-  const { authToken } = useContext(AuthContext); // Use AuthContext to get the authToken
+  const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
   const [description, setDescription] = useState(questDetails ? questDetails.description : '');
   const [duration, setDuration] = useState('');
@@ -49,16 +50,7 @@ const NewQuestScreen = ({ route }) => {
   const [openTime, setOpenTime] = useState(false);
 
   useEffect(() => {
-    const fetchIcons = async () => {
-      try {
-        const response = await fetchAllIcons();
-        setIcons(response);
-      } catch (error) {
-        console.error('Error fetching icons:', error);
-      }
-    };
-
-    fetchIcons();
+    setIcons(iconsData.icons);
   }, []);
 
   useEffect(() => {
@@ -85,10 +77,12 @@ const NewQuestScreen = ({ route }) => {
         duration: `${duration} ${durationUnit}`,
         checkin_frequency: frequency,
         time,
-        icon_id: icon?.icon_id || null, // Assuming icon object has icon_id property
+        icon_id: icon ? icons.indexOf(icon) + 1 : null, // Calculate icon_id from index
         start_date: new Date().toISOString(), // Use the current date for start_date
         end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
-        category_id: 1 // Default category_id, replace as needed
+        category_id: 1, // Default category_id, replace as needed
+        status: 'active', // Default status
+        created_by: userId // Include userId as created_by
       };
 
       try {
@@ -170,6 +164,7 @@ const NewQuestScreen = ({ route }) => {
       <TextInput
         style={styles.input}
         placeholder="Zoom Link"
+        autoCapitalize="none"
         value={zoomLink}
         onChangeText={setZoomLink}
       />
@@ -215,7 +210,6 @@ const NewQuestScreen = ({ route }) => {
                   }}
                 >
                   {renderIcon(icon)}
-                  <Text>{icon.name}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -323,6 +317,16 @@ const styles = StyleSheet.create({
   iconOption: {
     alignItems: 'center',
     margin: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#000',
+    padding: 10,
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 

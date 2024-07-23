@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useNavigation } from '@react-navigation/native';
-import { fetchAllQuests } from '../services/apiService'; // Import the API service
+import questsData from '../assets/templates.json'; // Import the local JSON file
+import iconsData from '../assets/icons.json'; // Import the local JSON file
 
 const QuestTemplatesScreen = () => {
   const [quests, setQuests] = useState([]);
@@ -15,32 +15,20 @@ const QuestTemplatesScreen = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchQuests = async () => {
-      try {
-        const response = await fetchAllQuests();
-        console.log('Fetched quests:', response); // Log the response data for debugging
-        setQuests(Array.isArray(response) ? response : []);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching quests:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchQuests();
+    setQuests(questsData);
+    setLoading(false);
   }, []);
 
-  const renderIcon = (icon) => {
-    if (!icon) return <Icon name="question-circle" size={24} style={styles.questIcon} />;
-    const { name, library } = icon;
+  const renderIcon = (icon_id) => {
+    const icon = iconsData.icons[icon_id - 1] || { name: "star", library: "FontAwesome" };
 
-    switch (library) {
+    switch (icon.library) {
       case 'FontAwesome':
-        return <Icon name={name} size={24} style={styles.questIcon} />;
+        return <Icon name={icon.name} size={24} style={styles.questIcon} />;
       case 'MaterialCommunityIcons':
-        return <MaterialCommunityIcons name={name} size={24} style={styles.questIcon} />;
+        return <MaterialCommunityIcons name={icon.name} size={24} style={styles.questIcon} />;
       default:
-        return <Icon name="question-circle" size={24} style={styles.questIcon} />;
+        return <Icon name="star" size={24} style={styles.questIcon} />;
     }
   };
 
@@ -51,7 +39,7 @@ const QuestTemplatesScreen = () => {
         style={styles.questItem}
         onPress={() => navigation.navigate('NewQuest', { questDetails: quest })} // Navigate and pass data
       >
-        {renderIcon(quest.icon)}
+        {renderIcon(quest.icon_id)}
         <View style={styles.questDetails}>
           <Text style={styles.questName}>{quest.quest_name}</Text>
           <Text style={styles.questDescription}>{quest.description}</Text>
