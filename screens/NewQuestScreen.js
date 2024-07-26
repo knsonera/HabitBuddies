@@ -71,13 +71,14 @@ const NewQuestScreen = ({ route }) => {
 
   const handleSubmit = async () => {
     if (validateForm()) {
-      const newChallenge = {
+      const newQuest = {
         quest_name: name,
         description,
         duration: `${duration} ${durationUnit}`,
         checkin_frequency: frequency,
+        zoom_link: zoomLink,
         time,
-        icon_id: icon ? icons.indexOf(icon) + 1 : null, // Calculate icon_id from index
+        icon_id: icon ? icons.indexOf(icon) : null, // Calculate icon_id from index
         start_date: new Date().toISOString(), // Use the current date for start_date
         end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
         category_id: 1, // Default category_id, replace as needed
@@ -86,7 +87,7 @@ const NewQuestScreen = ({ route }) => {
       };
 
       try {
-        await createQuest(newChallenge, authToken);
+        await createQuest(newQuest, authToken);
         alert('Quest started successfully!');
         navigation.navigate('Home');
       } catch (error) {

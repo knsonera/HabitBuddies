@@ -8,6 +8,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { AuthContext } from '../context/AuthContext';
+import iconsData from '../assets/icons';
 
 const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -20,27 +21,35 @@ const HomeScreen = () => {
   const [friends, setFriends] = useState([]);
   const [checkins, setCheckins] = useState([]);
 
+  const loadUserData = async () => {
+    try {
+      await refreshTokens(); // Ensure tokens are refreshed if necessary
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
+  };
+
+  const loadUserQuests = async () => {
+    try {
+      const userQuests = await fetchUserQuests(); // Ensure tokens are refreshed if necessary
+      setQuests(userQuests);
+    } catch (error) {
+      console.error('Failed to load user quests:', error);
+    }
+  };
+
+  const getIconById = (iconId) => {
+    console.log(iconId);
+    return iconsData.icons[iconId];
+  };
+
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        await refreshTokens(); // Ensure tokens are refreshed if necessary
-        // Fetch additional data as needed
-        // const userQuests = await fetchUserQuests(userId);
-        // const userBadges = await fetchUserBadges(userId);
-        // const userFriends = await fetchUserFriends(userId);
-        // const userCheckins = await fetchUserCheckins(userId);
-
-        // setQuests(userQuests);
-        // setBadges(userBadges);
-        // setFriends(userFriends);
-        // setCheckins(userCheckins);
-      } catch (error) {
-        console.error('Failed to load user data:', error);
-      }
-    };
-
     loadUserData();
   }, [userId]);
+
+  useEffect(() => {
+    loadUserQuests();
+  }, []);
 
   const handleCheckmarkPress = (quest) => {
     setSelectedQuest(quest);
@@ -71,6 +80,8 @@ const HomeScreen = () => {
     setModalVisible(false);
   };
 
+  const activeQuests = quests.filter(quest => quest.status === 'active');
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header userInfo={userInfo} />
@@ -91,22 +102,34 @@ const HomeScreen = () => {
               </Text>
             </View>
           ) : (
-            quests.map((quest) => (
-              <TouchableOpacity key={quest.user_quest_id} style={styles.questContainer} onPress={() => handleQuestPress(quest)}>
-                {quest.icon_library === 'FontAwesome' ? (
-                  <Icon name={quest.icon_name} size={30} style={styles.questIcon} />
-                ) : (
-                  <MaterialCommunityIcons name={quest.icon_name} size={30} style={styles.questIcon} />
-                )}
-                <Text style={styles.questName}>{quest.quest_name}</Text>
-                <TouchableOpacity
-                  style={styles.checkmarkButton}
-                  onPress={() => handleCheckmarkPress(quest)}
-                >
-                  <Icon name="check" size={30} style={styles.checkmarkIcon} />
+            activeQuests.map((quest) => {
+              const iconId = quest.icon_id;
+              console.log("mapping quests");
+              console.log("icon id: " + quest.icon_id);
+              console.log("icon id: " + iconId);
+              const icon = getIconById(iconId);
+              console.log(icon);
+              return (
+                <TouchableOpacity key={quest.user_quest_id} style={styles.questContainer} onPress={() => handleQuestPress(quest)}>
+                  {icon ? (
+                    icon.library === 'FontAwesome' ? (
+                      <Icon name={icon.name} size={20} style={styles.questIcon} />
+                    ) : (
+                      <MaterialCommunityIcons name={icon.name} size={20} style={styles.questIcon} />
+                    )
+                  ) : (
+                    <Icon name="question-circle" size={20} style={styles.questIcon} /> // Fallback icon
+                  )}
+                  <Text style={styles.questName}>{quest.quest_name}</Text>
+                  <TouchableOpacity
+                    style={styles.checkmarkButton}
+                    onPress={() => handleCheckmarkPress(quest)}
+                  >
+                    <Icon name="check" size={30} style={styles.checkmarkIcon} />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -195,13 +218,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   questIcon: {
-    fontSize: 30,
+    fontSize: 20,
     width: 30,
     marginRight: 20,
   },
   questName: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 14,
     color: '#000000',
   },
   checkmarkButton: {

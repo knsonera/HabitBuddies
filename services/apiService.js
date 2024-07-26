@@ -28,7 +28,9 @@ const request = async (endpoint, method = 'GET', body = null, retry = true) => {
             const refreshed = await refreshAuthToken();
             if (refreshed) {
                 // Try the request again with the new token
-                headers['Authorization'] = `Bearer ${await getAuthToken()}`;
+                const newToken = await getAuthToken();
+                headers['Authorization'] = `Bearer ${newToken}`;
+                config.headers = headers;
                 response = await fetch(`${BASE_URL}${endpoint}`, config);
             }
         }
@@ -61,7 +63,6 @@ const request = async (endpoint, method = 'GET', body = null, retry = true) => {
 
 export const signUp = async (email, password, username, fullname) => {
     try {
-        console.log('signing up...');
         const response = await request('/auth/signup', 'POST', { email, password, username, fullname });
         await setAuthToken(response.token, response.refreshToken, response.userId);
         return response;
@@ -78,7 +79,6 @@ export const signUp = async (email, password, username, fullname) => {
 
 export const logIn = async (email, password) => {
     try {
-        console.log('logging in...');
         const data = await request('/auth/login', 'POST', { email, password });
         await setAuthToken(data.token, data.refreshToken, data.userId);
         return data;
@@ -93,7 +93,6 @@ export const logIn = async (email, password) => {
 
 export const refreshAuthToken = async () => {
     try {
-        console.log('refreshing auth token...');
         const refreshToken = await getRefreshToken();
         if (!refreshToken) {
             throw new Error('Refresh token is required');
@@ -111,7 +110,6 @@ export const refreshAuthToken = async () => {
 
 export const checkTokenValidity = async () => {
     try {
-        console.log('checking token validity...');
         const response = await request('/auth/check-token', 'POST');
         return response.status === 200;
     } catch (error) {
@@ -121,7 +119,6 @@ export const checkTokenValidity = async () => {
 
 // Fetch user info
 export const fetchUserInfo = async () => {
-    console.log('fetching user info...');
     const userId = await getUserId();
     return request(`/users/${userId}`, 'GET');
 };
@@ -131,9 +128,38 @@ export const createQuest = async (questData) => {
     return request('/quests', 'POST', questData);
 };
 
+// Edit an existing quest
+export const editQuest = async (questData) => {
+    const { userQuestId, ...data } = questData;
+    return request(`/quests/${userQuestId}`, 'PUT', data);
+};
+
+export const endQuest = async (questId) => {
+    try {
+        // Fetch the current quest data
+        const questData = await request(`/quests/${questId}`, 'GET');
+
+        // Update the status and updated_at fields
+        const updatedQuestData = {
+            ...questData,
+            status: 'completed',
+            updated_at: new Date().toISOString(),
+        };
+
+        return request(`/quests/${questId}`, 'PUT', updatedQuestData);
+    } catch (error) {
+        console.error('Failed to end the quest:', error);
+        throw error;
+    }
+};
+
 // Fetch user quests
 export const fetchUserQuests = async () => {
     const userId = await getUserId();
-    const authToken = await getAuthToken();
-    return request(`/users/${userId}/quests`, 'GET', null, authToken);
+    return request(`/users/${userId}/quests`, 'GET');
+};
+
+// Fetch users for quest
+export const fetchQuestParticipants = async (questId) => {
+    return request(`/quests/${questId}/users`, 'GET');
 };
