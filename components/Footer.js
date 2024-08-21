@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { currentUserProfile, friendsList } from '../assets/mockData';
+import { AuthContext } from '../context/AuthContext'; // Import AuthContext
 
 const Footer = () => {
   const navigation = useNavigation();
+  const { userId } = useContext(AuthContext); // Get the current user's ID from AuthContext
+
+  console.log('userId');
+  console.log(userId);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -13,16 +17,16 @@ const Footer = () => {
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <MaterialCommunityIcons name="home" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('StartQuest')}>
-          <MaterialCommunityIcons name="trophy" size={30} color="black" />
+        <TouchableOpacity onPress={() => navigation.navigate('Social')}>
+          <MaterialCommunityIcons name="account-group" size={30} color="black" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('StartQuest')}>
           <MaterialCommunityIcons name="plus" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Social')}>
-          <MaterialCommunityIcons name="account-group" size={30} color="black" />
+        <TouchableOpacity onPress={() => navigation.navigate('Development')}>
+          <MaterialCommunityIcons name="star" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile', { userProfile: currentUserProfile, isCurrentUser: true })}>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId })}>
           <MaterialCommunityIcons name="account" size={30} color="black" />
         </TouchableOpacity>
       </View>

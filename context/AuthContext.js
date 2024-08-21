@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { logIn, signUp, checkTokenValidity, fetchUserInfo, refreshAuthToken } from '../services/apiService';
-import { getAuthToken, getRefreshToken, setAuthToken, getUserId, clearAuthToken } from '../services/authService';
+import { getAuthToken, getRefreshToken, setAuthToken, getUserId as fetchUserId, clearAuthToken } from '../services/authService';
 
 export const AuthContext = createContext();
 
@@ -13,11 +13,14 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const token = await getAuthToken();
+            console.log('AuthProvider - Fetched auth token:', token);
             if (token) {
                 setAuthTokenState(token);
-                const storedUserId = await getUserId();
+                const storedUserId = await fetchUserId();
+                console.log('AuthProvider - Fetched userId:', storedUserId);
                 setUserId(storedUserId);
-                const userInfo = await fetchUserInfo();
+                const userInfo = await fetchUserInfo(storedUserId);
+                console.log('AuthProvider - Fetched userInfo:', userInfo);
                 setUserInfo(userInfo);
             }
             setIsLoading(false);
@@ -30,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         await setAuthToken(response.token, response.refreshToken, response.userId);
         setAuthTokenState(response.token);
         setUserId(response.userId); // Set userId from response
-        const userInfo = await fetchUserInfo();
+        const userInfo = await fetchUserInfo(response.userId);
         setUserInfo(userInfo);
     };
 
@@ -39,7 +42,7 @@ export const AuthProvider = ({ children }) => {
         await setAuthToken(response.token, response.refreshToken, response.userId);
         setAuthTokenState(response.token);
         setUserId(response.userId); // Set userId from response
-        const userInfo = await fetchUserInfo();
+        const userInfo = await fetchUserInfo(response.userId);
         setUserInfo(userInfo);
     };
 
@@ -59,7 +62,7 @@ export const AuthProvider = ({ children }) => {
                     await setAuthToken(newToken.token, newToken.refreshToken, newToken.userId);
                     setAuthTokenState(newToken.token);
                     setUserId(newToken.userId); // Set userId from new token
-                    const userInfo = await fetchUserInfo();
+                    const userInfo = await fetchUserInfo(newToken.userId);
                     setUserInfo(userInfo);
                     return true;
                 }
@@ -78,7 +81,7 @@ export const AuthProvider = ({ children }) => {
             await setAuthToken(newTokens.token, newTokens.refreshToken, newTokens.userId);
             setAuthTokenState(newTokens.token);
             setUserId(newTokens.userId); // Set userId from new tokens
-            const userInfo = await fetchUserInfo();
+            const userInfo = await fetchUserInfo(newTokens.userId);
             setUserInfo(userInfo);
         }
     };

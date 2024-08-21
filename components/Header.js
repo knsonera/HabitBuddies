@@ -23,8 +23,7 @@ const Header = ({ userInfo }) => {
         <TouchableOpacity onPress={goToHome}>
           <MaterialCommunityIcons name="account-group" size={30} color="black" />
         </TouchableOpacity>
-        <Text style={styles.text}>Score: {userInfo?.game_score || 0}</Text>
-        <Text style={styles.text}>Streak: {userInfo?.streak || 0}</Text>
+        <Text style={styles.text}>Habit Buddies</Text>
         <TouchableOpacity onPress={handleLogout}>
           <MaterialCommunityIcons name="logout" size={30} color="black" />
         </TouchableOpacity>

@@ -10,6 +10,11 @@ import QuestTemplatesScreen from '../screens/QuestTemplatesScreen';
 import NewQuestScreen from '../screens/NewQuestScreen';
 import EditQuestScreen from '../screens/EditQuestScreen';
 import QuestScreen from '../screens/QuestScreen';
+import ChatScreen from '../screens/ChatScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import DevelopmentScreen from '../screens/DevelopmentScreen';
+import SocialScreen from '../screens/SocialScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -31,6 +36,10 @@ const AppNavigator = () => {
         <Stack.Screen name="NewQuest" component={NewQuestScreen} />
         <Stack.Screen name="EditQuest" component={EditQuestScreen} />
         <Stack.Screen name="Quest" component={QuestScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="Development" component={DevelopmentScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Social" component={SocialScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

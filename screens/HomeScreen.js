@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fetchUserQuests, fetchUserInfo } from '../services/apiService';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -20,6 +20,7 @@ const HomeScreen = () => {
   const [badges, setBadges] = useState([]);
   const [friends, setFriends] = useState([]);
   const [checkins, setCheckins] = useState([]);
+  const [comment, setComment] = useState([]);
 
   const loadUserData = async () => {
     try {
@@ -42,6 +43,10 @@ const HomeScreen = () => {
     console.log(iconId);
     return iconsData.icons[iconId];
   };
+
+  const handleCheckInSubmit = (comment) => {
+    console.log('submit');
+  }
 
   useEffect(() => {
     loadUserData();
@@ -143,21 +148,33 @@ const HomeScreen = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
+
+              {/* Close Button */}
               <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                 <Icon name="close" size={24} color="#000" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={handleTimerCounter}>
-                <Text style={styles.modalButtonText}>Timer/Counter</Text>
+
+              {/* Title */}
+              <Text style={styles.modalTitle}>Checking-in</Text>
+
+              <Text style={styles.modalDateTime}>{selectedQuest.quest_name}</Text>
+
+              {/* Current Date and Time */}
+              <Text style={styles.modalDateTime}>{new Date().toLocaleString()}</Text>
+
+              {/* Text Field for Note or Comment */}
+              <TextInput
+                style={styles.textField}
+                placeholder="Add a note or comment..."
+                onChangeText={setComment}  // Assuming setComment is a state setter for the note
+                value={comment}            // Assuming comment is a state variable holding the text
+              />
+
+              {/* Submit Button */}
+              <TouchableOpacity style={styles.submitButton} onPress={handleCheckInSubmit}>
+                <Text style={styles.submitButtonText}>Submit</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={handleMarkAsDone}>
-                <Text style={styles.modalButtonText}>Mark as Done</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={handleOpenChat}>
-                <Text style={styles.modalButtonText}>Open Chat</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={handleVideoCall}>
-                <Text style={styles.modalButtonText}>Video Call</Text>
-              </TouchableOpacity>
+
             </View>
           </View>
         </Modal>
@@ -240,33 +257,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
-    width: 300,
-    padding: 25,
-    paddingTop: 40,
-    backgroundColor: '#FFFFFF',
+    width: '80%',
+    padding: 20,
+    backgroundColor: '#fff',
     borderRadius: 10,
     alignItems: 'center',
-    position: 'relative',
   },
   closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+    alignSelf: 'flex-end',
   },
-  modalButton: {
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  modalDateTime: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+  },
+  textField: {
     width: '100%',
-    padding: 15,
-    marginVertical: 5,
-    backgroundColor: '#666666',
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  submitButton: {
+    width: '100%',
+    paddingVertical: 10,
+    backgroundColor: '#444444',
     borderRadius: 5,
     alignItems: 'center',
   },
-  modalButtonText: {
+  submitButtonText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#FFFFFF',
   },
 });
 

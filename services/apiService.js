@@ -117,10 +117,13 @@ export const checkTokenValidity = async () => {
     }
 };
 
-// Fetch user info
-export const fetchUserInfo = async () => {
-    const userId = await getUserId();
-    return request(`/users/${userId}`, 'GET');
+// Get user info
+export const fetchUserInfo = async (userId = null) => {
+    const id = userId || await getUserId();
+    if (!id) {
+        throw new Error('User ID is required');
+    }
+    return request(`/users/${id}`, 'GET');
 };
 
 // Create a new quest
@@ -154,12 +157,25 @@ export const endQuest = async (questId) => {
 };
 
 // Fetch user quests
-export const fetchUserQuests = async () => {
-    const userId = await getUserId();
-    return request(`/users/${userId}/quests`, 'GET');
+export const fetchUserQuests = async (userId = null) => {
+    const id = userId || await getUserId();
+    if (!id) {
+        throw new Error('User ID is required');
+    }
+    return request(`/users/${id}/quests`, 'GET');
 };
 
 // Fetch users for quest
 export const fetchQuestParticipants = async (questId) => {
     return request(`/quests/${questId}/users`, 'GET');
+};
+
+// Chat
+export const fetchMessages = async (questId, authToken) => {
+    return request(`/quests/${questId}/messages`, 'GET', null, authToken);
+};
+
+// Chat
+export const sendMessage = async (questId, message, authToken) => {
+    return request(`/quests/${questId}/messages`, 'POST', message, authToken);
 };

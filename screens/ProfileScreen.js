@@ -1,18 +1,94 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { currentUserProfile, friendsList } from '../assets/mockData';
+import { fetchUserInfo, fetchUserQuests } from '../services/apiService'; // Adjust the path as needed
 
 const ProfileScreen = ({ route, navigation }) => {
+  const { userId: routeUserId } = route.params || {};
+  const { userId: currentUserId } = useContext(AuthContext);
 
-  const { userProfile, isCurrentUser } = route.params;
+  const userIdToFetch = routeUserId || currentUserId;
+
+  const [userProfile, setUserProfile] = useState(null);
+  const [userQuests, setUserQuests] = useState({ current: [], past: [] });
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true); // Loading state
+
+  useEffect(() => {
+    const getUserData = async () => {
+      try {
+        console.log('Fetching user data for userId:', userIdToFetch);
+        if (!userIdToFetch) {
+          throw new Error('User ID is required');
+        }
+        const data = await fetchUserInfo(userIdToFetch);
+        console.log('Fetched user profile:', data);
+
+        // Assign a random avatar if the user doesn't have one
+        if (!data.avatar_id) {
+          const randomAvatar = avatarsData.avatars[Math.floor(Math.random() * avatarsData.avatars.length)].url;
+          data.avatar_id = randomAvatar;
+        }
+
+        setUserProfile(data);
+        setIsCurrentUser(data.id === currentUserId);
+
+        // Fetch user's quests
+        console.log('Fetching user quests for userId:', userIdToFetch);
+        const questsData = await fetchUserQuests(userIdToFetch);
+        console.log('Fetched user quests:', questsData);
+        setUserQuests({
+          current: questsData.current || [],
+          past: questsData.past || [],
+        });
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        setUserQuests({ current: [], past: [] }); // Ensure it's an object with arrays in case of error
+      } finally {
+        setLoading(false); // Set loading to false after data is fetched
+      }
+    };
+
+    getUserData();
+  }, [userIdToFetch, currentUserId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Loading...</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.loadingContainer}>
+          <Text>Failed to load user profile.</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
+
+  console.log('Rendering ProfileScreen with userProfile:', userProfile);
+  console.log('Current quests:', userQuests.current);
+  console.log('Past quests:', userQuests.past);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -20,9 +96,10 @@ const ProfileScreen = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
           <View style={styles.topSection}>
-            <Image source={{ uri: userProfile.avatar_image }} style={styles.avatar} />
-            <Text style={styles.fullName}>{userProfile.fullName}</Text>
-            <Text style={styles.login}>{userProfile.login}</Text>
+            <Image source={{ uri: userProfile.avatar_id }} style={styles.avatar} />
+            <Text style={styles.fullName}>{userProfile.fullname}</Text>
+            <Text style={styles.login}>{userProfile.username}</Text>
+            {isCurrentUser && <Text style={styles.currentUserText}>Current User</Text>}
           </View>
           {isCurrentUser ? (
             <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('FindFriend')}>
@@ -43,12 +120,12 @@ const ProfileScreen = ({ route, navigation }) => {
               <View style={styles.summaryItem}>
                 <MaterialCommunityIcons name="fire" size={24} color="#000000" />
                 <Text style={styles.summaryTitle}>Current Streak</Text>
-                <Text style={styles.summaryValue}>{userProfile.currentStreak}</Text>
+                <Text style={styles.summaryValue}>{userProfile.streak}</Text>
               </View>
               <View style={styles.summaryItem}>
                 <MaterialCommunityIcons name="trophy" size={24} color="#000000" />
                 <Text style={styles.summaryTitle}>Quests</Text>
-                <Text style={styles.summaryValue}>{userProfile.quests}</Text>
+                <Text style={styles.summaryValue}>{userQuests.current.length}</Text>
               </View>
               <TouchableOpacity style={styles.summaryItem} onPress={() => setModalVisible(true)}>
                 <Icon name="users" size={24} color="#000000" />
@@ -58,16 +135,14 @@ const ProfileScreen = ({ route, navigation }) => {
               <View style={styles.summaryItem}>
                 <MaterialCommunityIcons name="star-circle" size={24} color="#000000" />
                 <Text style={styles.summaryTitle}>Score</Text>
-                <Text style={styles.summaryValue}>{userProfile.score}</Text>
+                <Text style={styles.summaryValue}>{userProfile.game_score}</Text>
               </View>
             </View>
           </View>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Achievements</Text>
             <View style={styles.achievementsSection}>
-              {userProfile.badges.map((badge, index) => (
-                <Image key={index} source={{ uri: badge }} style={styles.badge} />
-              ))}
+              {/* Display achievements here */}
             </View>
           </View>
           {!isCurrentUser && (
@@ -75,42 +150,24 @@ const ProfileScreen = ({ route, navigation }) => {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Current Quests</Text>
                 <View style={styles.questsSection}>
-                  {userProfile.currentQuests.map((quest, index) => (
+                  {userQuests.current.map((quest) => (
                     <TouchableOpacity
-                      key={index}
+                      key={quest.id}
                       style={styles.questItem}
-                      onPress={() => navigation.navigate('Quest', { questDetails: quest })}
+                      onPress={() => navigation.navigate('QuestDetails', { questId: quest.id })}
                     >
-                      <View style={styles.questContent}>
-                        {quest.library === 'FontAwesome' ? (
-                          <Icon name={quest.icon} size={24} style={styles.questIcon} />
-                        ) : (
-                          <MaterialCommunityIcons name={quest.icon} size={24} style={styles.questIcon} />
-                        )}
-                        <Text style={styles.questText}>{quest.name}</Text>
-                      </View>
+                      <Text style={styles.questText}>{quest.title}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
-                </View>
-                <View style={styles.section}>
+              </View>
+              <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Past Quests</Text>
                 <View style={styles.questsSection}>
-                  {userProfile.pastQuests.map((quest, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.questItem}
-                      onPress={() => navigation.navigate('Quest', { questDetails: quest })}
-                    >
-                      <View style={styles.questContent}>
-                        {quest.library === 'FontAwesome' ? (
-                          <Icon name={quest.icon} size={24} style={styles.questIcon} />
-                        ) : (
-                          <MaterialCommunityIcons name={quest.icon} size={24} style={styles.questIcon} />
-                        )}
-                        <Text style={styles.questText}>{quest.name}</Text>
-                      </View>
-                    </TouchableOpacity>
+                  {userQuests.past.map((quest) => (
+                    <View key={quest.id} style={styles.questItem}>
+                      <Text style={styles.questText}>{quest.title}</Text>
+                    </View>
                   ))}
                 </View>
               </View>
@@ -130,14 +187,14 @@ const ProfileScreen = ({ route, navigation }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Friends</Text>
             <FlatList
-              data={friendsList}
-              keyExtractor={item => item.id}
+              data={userProfile.friendsList}
+              keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.friendItem}
                   onPress={() => {
                     setModalVisible(false);
-                    navigation.navigate('Profile', { userProfile: item, isCurrentUser: false });
+                    navigation.navigate('Profile', { userId: item.id });
                   }}
                 >
                   <Image source={{ uri: item.avatar }} style={styles.friendAvatar} />
@@ -161,7 +218,7 @@ const ProfileScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -196,6 +253,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888888',
   },
+  currentUserText: {
+    fontSize: 16,
+    color: '#000000',
+    fontWeight: 'bold',
+    marginTop: 5,
+  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,7 +267,6 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     borderRadius: 10,
     paddingHorizontal: 40,
-    borderRadius: 5,
     marginBottom: 10,
   },
   addButtonText: {
@@ -221,7 +283,6 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     borderRadius: 10,
     paddingHorizontal: 40,
-    borderRadius: 5,
     marginBottom: 10,
   },
   followButtonText: {
@@ -259,13 +320,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
-  questContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  questIcon: {
-    marginRight: 10,
-  },
   questText: {
     fontSize: 18,
     color: '#000',
@@ -300,6 +354,11 @@ const styles = StyleSheet.create({
   badge: {
     width: 50,
     height: 50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
     flex: 1,

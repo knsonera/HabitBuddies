@@ -41,6 +41,10 @@ const QuestScreen = ({ route }) => {
     navigation.navigate('EditQuest', { questDetails: quest });
   };
 
+  const handleChatPress = (questId) => {
+    navigation.navigate('Chat', { questId });
+  };
+
   const handleEndPress = async () => {
     try {
       await endQuest(questDetails.quest_id);
@@ -67,7 +71,7 @@ const QuestScreen = ({ route }) => {
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id)}>
               <MaterialCommunityIcons name="chat" size={30} color="#000" />
               <Text style={styles.buttonText}>Chat</Text>
             </TouchableOpacity>
