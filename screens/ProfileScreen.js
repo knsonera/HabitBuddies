@@ -53,10 +53,14 @@ const ProfileScreen = ({ route, navigation }) => {
         // Fetch user's quests
         console.log('Fetching user quests for userId:', userIdToFetch);
         const questsData = await fetchUserQuests(userIdToFetch);
+
+        const currentQuests = questsData.filter(quest => quest.status === 'active');
+        const pastQuests = questsData.filter(quest => quest.status === 'completed' || quest.status === 'dropped');
+
         console.log('Fetched user quests:', questsData);
         setUserQuests({
-          current: questsData.current || [],
-          past: questsData.past || [],
+          current: currentQuests || [],
+          past: pastQuests || [],
         });
       } catch (error) {
         console.error('Failed to load user data:', error);

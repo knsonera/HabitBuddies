@@ -171,6 +171,7 @@ export const fetchUserQuests = async (userId = null) => {
     if (!id) {
         throw new Error('User ID is required');
     }
+    console.log('fetching user quests');
     return request(`/users/${id}/quests`, 'GET');
 };
 
