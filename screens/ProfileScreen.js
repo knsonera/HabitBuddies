@@ -2,10 +2,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -24,6 +24,14 @@ const ProfileScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true); // Loading state
 
   useEffect(() => {
+    //console.log('AuthContext currentUserId:', currentUserId);
+    console.log('Route userId:', routeUserId);
+    console.log('UserId to Fetch:', userIdToFetch);
+
+    if (!userIdToFetch) {
+      console.error('Error: User ID is undefined');
+    }
+
     const getUserData = async () => {
       try {
         console.log('Fetching user data for userId:', userIdToFetch);
@@ -40,7 +48,7 @@ const ProfileScreen = ({ route, navigation }) => {
         }
 
         setUserProfile(data);
-        setIsCurrentUser(data.id === currentUserId);
+        setIsCurrentUser(routeUserId == currentUserId);
 
         // Fetch user's quests
         console.log('Fetching user quests for userId:', userIdToFetch);
@@ -60,6 +68,12 @@ const ProfileScreen = ({ route, navigation }) => {
 
     getUserData();
   }, [userIdToFetch, currentUserId]);
+
+  // Function to get avatar URL by avatar ID
+  const getAvatarUrl = (avatarId) => {
+    const avatar = avatarsData.avatars.find((a) => a.id === avatarId);
+    return avatar ? avatar.url : null;
+  };
 
   if (loading) {
     return (
@@ -90,19 +104,21 @@ const ProfileScreen = ({ route, navigation }) => {
   console.log('Current quests:', userQuests.current);
   console.log('Past quests:', userQuests.past);
 
+  const avatarUrl = getAvatarUrl(userProfile.avatar_id);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
           <View style={styles.topSection}>
-            <Image source={{ uri: userProfile.avatar_id }} style={styles.avatar} />
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
             <Text style={styles.fullName}>{userProfile.fullname}</Text>
             <Text style={styles.login}>{userProfile.username}</Text>
             {isCurrentUser && <Text style={styles.currentUserText}>Current User</Text>}
           </View>
           {isCurrentUser ? (
-            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('FindFriend')}>
+            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Search')}>
               <Text style={styles.addButtonText}>
                 <Icon name="user-plus" size={16} color="#000000" /> Add Friends
               </Text>
@@ -118,11 +134,6 @@ const ProfileScreen = ({ route, navigation }) => {
             <Text style={styles.sectionTitle}>Summary</Text>
             <View style={styles.summarySection}>
               <View style={styles.summaryItem}>
-                <MaterialCommunityIcons name="fire" size={24} color="#000000" />
-                <Text style={styles.summaryTitle}>Current Streak</Text>
-                <Text style={styles.summaryValue}>{userProfile.streak}</Text>
-              </View>
-              <View style={styles.summaryItem}>
                 <MaterialCommunityIcons name="trophy" size={24} color="#000000" />
                 <Text style={styles.summaryTitle}>Quests</Text>
                 <Text style={styles.summaryValue}>{userQuests.current.length}</Text>
@@ -132,11 +143,6 @@ const ProfileScreen = ({ route, navigation }) => {
                 <Text style={styles.summaryTitle}>Friends</Text>
                 <Text style={styles.summaryValue}>{userProfile.friends}</Text>
               </TouchableOpacity>
-              <View style={styles.summaryItem}>
-                <MaterialCommunityIcons name="star-circle" size={24} color="#000000" />
-                <Text style={styles.summaryTitle}>Score</Text>
-                <Text style={styles.summaryValue}>{userProfile.game_score}</Text>
-              </View>
             </View>
           </View>
           <View style={styles.section}>

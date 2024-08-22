@@ -9,32 +9,55 @@ export const AuthProvider = ({ children }) => {
     const [userId, setUserId] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     useEffect(() => {
-        const initializeAuth = async () => {
-            const token = await getAuthToken();
-            console.log('AuthProvider - Fetched auth token:', token);
-            if (token) {
-                setAuthTokenState(token);
-                const storedUserId = await fetchUserId();
-                console.log('AuthProvider - Fetched userId:', storedUserId);
-                setUserId(storedUserId);
-                const userInfo = await fetchUserInfo(storedUserId);
-                console.log('AuthProvider - Fetched userInfo:', userInfo);
-                setUserInfo(userInfo);
-            }
-            setIsLoading(false);
-        };
-        initializeAuth();
+      // Assuming you fetch user data and set the ID here
+      const fetchUser = async () => {
+        const userData = await getUserDataFromApi();
+        if (userData) {
+          setCurrentUserId(userData.id);
+        }
+      };
+
+      fetchUser();
+    }, []);
+
+    useEffect(() => {
+      const initializeAuth = async () => {
+          const token = await getAuthToken();
+          console.log('AuthProvider - Fetched auth token:', token);
+          if (token) {
+              const storedUserId = await getUserId(); // Fetch the userId correctly
+              console.log('AuthProvider - Fetched userId:', storedUserId);
+              if (storedUserId) {
+                  setAuthTokenState(token);
+                  setUserId(storedUserId);
+                  const userInfo = await fetchUserInfo(storedUserId);
+                  console.log('AuthProvider - Fetched userInfo:', userInfo);
+                  setUserInfo(userInfo);
+              } else {
+                  console.error('AuthProvider - No userId found, logging out');
+                  await logOut();
+              }
+          }
+          setIsLoading(false);
+      };
+      initializeAuth();
     }, []);
 
     const logInUser = async (email, password) => {
         const response = await logIn(email, password);
-        await setAuthToken(response.token, response.refreshToken, response.userId);
-        setAuthTokenState(response.token);
-        setUserId(response.userId); // Set userId from response
-        const userInfo = await fetchUserInfo(response.userId);
-        setUserInfo(userInfo);
+        console.log('LogIn Response:', response); // Log the response to ensure userId is present
+        if (response.userId) {
+            await setAuthToken(response.token, response.refreshToken, response.userId);
+            setAuthTokenState(response.token);
+            setUserId(response.userId);
+            const userInfo = await fetchUserInfo(response.userId);
+            setUserInfo(userInfo);
+        } else {
+            console.error('User ID is missing in the login response');
+        }
     };
 
     const signUpUser = async (email, password, username, fullname) => {

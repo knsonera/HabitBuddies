@@ -126,9 +126,18 @@ export const fetchUserInfo = async (userId = null) => {
     return request(`/users/${id}`, 'GET');
 };
 
-// Create a new quest
-export const createQuest = async (questData) => {
-    return request('/quests', 'POST', questData);
+export const createQuest = async (questData, refreshQuests) => {
+    try {
+        const newQuest = await request('/quests', 'POST', questData);
+        // Optionally trigger a re-fetch of quests after creation
+        if (refreshQuests) {
+            await refreshQuests();
+        }
+        return newQuest;
+    } catch (error) {
+        console.error('Failed to create quest:', error);
+        throw error;
+    }
 };
 
 // Edit an existing quest
@@ -178,4 +187,11 @@ export const fetchMessages = async (questId, authToken) => {
 // Chat
 export const sendMessage = async (questId, message, authToken) => {
     return request(`/quests/${questId}/messages`, 'POST', message, authToken);
+};
+
+export const searchUsers = async (query) => {
+    if (!query) {
+        throw new Error('Search query is required');
+    }
+    return request(`/users/search?query=${encodeURIComponent(query)}`, 'GET');
 };

@@ -4,12 +4,13 @@ let authToken = '';
 let userId = '';
 let refreshToken = '';
 
-export const setAuthToken = async (token, refresh, userId) => {
+export const setAuthToken = async (token, refresh, user) => {
     authToken = token;
     refreshToken = refresh;
+    userId = user; // Ensure userId is set here
     await AsyncStorage.setItem('authToken', token);
     await AsyncStorage.setItem('refreshToken', refresh);
-    await AsyncStorage.setItem('userId', JSON.stringify({ userId }));
+    await AsyncStorage.setItem('userId', JSON.stringify({ userId })); // Correctly store the userId
     console.log('Tokens set:', { userId, authToken, refreshToken });
 };
 
@@ -42,8 +43,12 @@ export const clearAuthToken = async () => {
 export const getUserId = async () => {
     if (!userId) {
         const userIdString = await AsyncStorage.getItem('userId');
+        console.log('AsyncStorage returned userIdString:', userIdString);
         if (userIdString) {
             userId = JSON.parse(userIdString).userId;
+            console.log('Parsed userId:', userId);
+        } else {
+            console.log('No userId found in AsyncStorage');
         }
     }
     console.log('get user id: ', userId);

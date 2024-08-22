@@ -32,7 +32,7 @@ const HomeScreen = () => {
 
   const loadUserQuests = async () => {
     try {
-      const userQuests = await fetchUserQuests(); // Ensure tokens are refreshed if necessary
+      const userQuests = await fetchUserQuests(userId); // Ensure tokens are refreshed if necessary
       setQuests(userQuests);
     } catch (error) {
       console.error('Failed to load user quests:', error);
@@ -65,8 +65,16 @@ const HomeScreen = () => {
     navigation.navigate('Quest', { questDetails: quest });
   };
 
+  const handleQuestCreation = async (questData) => {
+    try {
+        await createQuest(questData, loadUserQuests);  // Refresh quests list after creating a new quest
+    } catch (error) {
+        console.error('Error creating quest:', error);
+    }
+  };
+
   const handleStartQuestPress = () => {
-    navigation.navigate('StartQuest');
+      navigation.navigate('NewQuest', { onCreateQuest: handleQuestCreation });
   };
 
   const handleTimerCounter = () => {

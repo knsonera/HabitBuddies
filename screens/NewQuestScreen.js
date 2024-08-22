@@ -32,6 +32,8 @@ const times = [
 
 const NewQuestScreen = ({ route }) => {
   const { questDetails } = route.params || {}; // Destructure the passed quest details
+  const { onCreateQuest } = route.params || {};
+
   const navigation = useNavigation();
   const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
@@ -70,31 +72,34 @@ const NewQuestScreen = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    if (validateForm()) {
-      const newQuest = {
-        quest_name: name,
-        description,
-        duration: `${duration} ${durationUnit}`,
-        checkin_frequency: frequency,
-        zoom_link: zoomLink,
-        time,
-        icon_id: icon ? icons.indexOf(icon) : null, // Calculate icon_id from index
-        start_date: new Date().toISOString(), // Use the current date for start_date
-        end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
-        category_id: 1, // Default category_id, replace as needed
-        status: 'active', // Default status
-        created_by: userId // Include userId as created_by
-      };
+      if (validateForm()) {
+          const newQuest = {
+            quest_name: name,
+            description,
+            duration: `${duration} ${durationUnit}`,
+            checkin_frequency: frequency,
+            zoom_link: zoomLink,
+            time,
+            icon_id: icon ? icons.indexOf(icon) : null, // Calculate icon_id from index
+            start_date: new Date().toISOString(), // Use the current date for start_date
+            end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
+            category_id: 1, // Default category_id, replace as needed
+            status: 'active', // Default status
+            created_by: userId // Include userId as created_by
+          };
 
-      try {
-        await createQuest(newQuest, authToken);
-        alert('Quest started successfully!');
-        navigation.navigate('Home');
-      } catch (error) {
-        console.error('Failed to start a quest:', error);
-        alert('Failed to start a quest.');
+          try {
+              await createQuest(newQuest);
+              alert('Quest started successfully!');
+              if (onCreateQuest) {
+                  onCreateQuest(questData, loadUserQuests); // Call the function after creating the quest
+              }
+              navigation.navigate('Home');
+          } catch (error) {
+              console.error('Failed to start a quest:', error);
+              alert('Failed to start a quest.');
+          }
       }
-    }
   };
 
   const renderIcon = (icon) => {
