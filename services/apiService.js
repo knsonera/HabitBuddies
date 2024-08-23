@@ -196,3 +196,45 @@ export const searchUsers = async (query) => {
     }
     return request(`/users/search?query=${encodeURIComponent(query)}`, 'GET');
 };
+
+// Friendship Functions
+export const requestFriendship = async (friendId) => {
+    const userId = await getUserId();
+    if (!userId || !friendId) {
+        throw new Error('Both user ID and friend ID are required');
+    }
+    console.log("Sending friend request from:", userId, "to:", friendId);
+    return request('/friendships/request', 'POST', { userId, friendId });
+};
+
+export const approveFriendship = async (friendId) => {
+    const userId = await getUserId();
+    if (!userId || !friendId) {
+        throw new Error('Both user ID and friend ID are required');
+    }
+    return request('/friendships/approve', 'PUT', { userId, friendId });
+};
+
+export const removeFriendship = async (friendId) => {
+    const userId = await getUserId();
+    if (!userId || !friendId) {
+        throw new Error('Both user ID and friend ID are required');
+    }
+    return request('/friendships/remove', 'DELETE', { userId, friendId });
+};
+
+export const fetchFriendshipStatus = async (friendId) => {
+    const userId = await getUserId();
+    if (!userId || !friendId) {
+        throw new Error('Both user ID and friend ID are required');
+    }
+    return request(`/friendships/status?userId=${userId}&friendId=${friendId}`, 'GET');
+};
+
+export const fetchFriendshipSender = async (friendId) => {
+    const userId = await getUserId();
+    if (!userId || !friendId) {
+        throw new Error('Both user ID and friend ID are required');
+    }
+    return request(`/friendships/sender?userId=${userId}&friendId=${friendId}`, 'GET');
+};

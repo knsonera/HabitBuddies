@@ -9,7 +9,8 @@ import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { fetchUserInfo, fetchUserQuests } from '../services/apiService'; // Adjust the path as needed
+import { fetchUserInfo, fetchUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender } from '../services/apiService';
+
 
 const ProfileScreen = ({ route, navigation }) => {
   const { userId: routeUserId } = route.params || {};
@@ -22,6 +23,8 @@ const ProfileScreen = ({ route, navigation }) => {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true); // Loading state
+  const [friendshipStatus, setFriendshipStatus] = useState(null);
+  const [isFriendRequestToCurrentUser, setIsFriendRequestToCurrentUser] = useState(false);
 
   useEffect(() => {
     //console.log('AuthContext currentUserId:', currentUserId);
@@ -31,6 +34,29 @@ const ProfileScreen = ({ route, navigation }) => {
     if (!userIdToFetch) {
       console.error('Error: User ID is undefined');
     }
+
+    const checkFriendshipStatus = async () => {
+      try {
+        const response = await fetchFriendshipStatus(userIdToFetch);
+        const status = response.status;
+        setFriendshipStatus(status);
+
+        if (status === 'pending') {
+          const senderResponse = await fetchFriendshipSender(userIdToFetch);
+          const senderId = senderResponse.senderId;
+
+          // Determine if the current user is the recipient of the friend request
+          const isFriendRequestToCurrentUser = senderId !== currentUserId;
+          setIsFriendRequestToCurrentUser(isFriendRequestToCurrentUser);
+
+          console.log('Friendship status:', status, 'Sender ID:', senderId, 'Is request to current user:', isFriendRequestToCurrentUser);
+        }
+      } catch (error) {
+        console.error('Error fetching friendship status:', error);
+      }
+    };
+
+    checkFriendshipStatus();
 
     const getUserData = async () => {
       try {
@@ -79,6 +105,89 @@ const ProfileScreen = ({ route, navigation }) => {
     return avatar ? avatar.url : null;
   };
 
+  const handleAddFriend = async () => {
+    try {
+      console.log("Sending friend request from:", currentUserId, "to:", userIdToFetch);
+      const response = await requestFriendship(userIdToFetch);
+      if (response.status === 200) {
+        setFriendshipStatus('pending');
+      }
+    } catch (error) {
+      console.error('Error requesting friendship:', error);
+    }
+  };
+
+  const handleApproveFriend = async () => {
+    try {
+      const response = await approveFriendship(userIdToFetch);
+      if (response.status === 200) {
+        setFriendshipStatus('active');
+      }
+    } catch (error) {
+      console.error('Error approving friendship:', error);
+    }
+  };
+
+  const handleRemoveFriend = async () => {
+    try {
+      const response = await removeFriendship(userIdToFetch);
+      if (response.status === 200) {
+        setFriendshipStatus('none');
+      }
+    } catch (error) {
+      console.error('Error removing friendship:', error);
+    }
+  };
+
+  const renderFriendshipButton = () => {
+    if (isCurrentUser) {
+      return (
+        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Search')}>
+          <Text style={styles.addButtonText}>
+            <Icon name="user-plus" size={16} color="#000000" /> Find Friends
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    if (friendshipStatus === 'none') {
+      return (
+        <TouchableOpacity style={styles.followButton} onPress={handleAddFriend}>
+          <Text style={styles.followButtonText}>
+            <Icon name="user-plus" size={16} color="#000000" /> Add to Friends
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    if (friendshipStatus === 'pending' && !isFriendRequestToCurrentUser) {
+      console.log('Friendship pending');
+      return <Text style={styles.pendingText}>Friend Request Sent</Text>;
+    }
+
+    if (friendshipStatus === 'active') {
+      return (
+        <TouchableOpacity style={styles.unfollowButton} onPress={handleRemoveFriend}>
+          <Text style={styles.unfollowButtonText}>
+            <Icon name="user-times" size={16} color="#000000" /> Bye-Bye Friend
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    if (friendshipStatus === 'pending' && isFriendRequestToCurrentUser) {
+      return (
+        <TouchableOpacity style={styles.approveButton} onPress={handleApproveFriend}>
+          <Text style={styles.approveButtonText}>
+            <Icon name="user-check" size={16} color="#000000" /> Become Friends
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return null; // Default case if no conditions are met
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -121,19 +230,9 @@ const ProfileScreen = ({ route, navigation }) => {
             <Text style={styles.login}>{userProfile.username}</Text>
             {isCurrentUser && <Text style={styles.currentUserText}>Current User</Text>}
           </View>
-          {isCurrentUser ? (
-            <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Search')}>
-              <Text style={styles.addButtonText}>
-                <Icon name="user-plus" size={16} color="#000000" /> Add Friends
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.followButton} onPress={() => {}}>
-              <Text style={styles.followButtonText}>
-                <Icon name="user-plus" size={16} color="#000000" /> Follow
-              </Text>
-            </TouchableOpacity>
-          )}
+
+          {renderFriendshipButton()}
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Summary</Text>
             <View style={styles.summarySection}>
@@ -288,18 +387,19 @@ const styles = StyleSheet.create({
   followButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 10,
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
     paddingHorizontal: 40,
     marginBottom: 10,
+    backgroundColor: '#ffcc00', // Bright yellow for visibility
   },
   followButtonText: {
     color: '#000000',
     fontSize: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    textAlign: 'center',
   },
   section: {
     width: '100%',
@@ -420,6 +520,47 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Center the content
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    paddingHorizontal: 40,
+    marginBottom: 10,
+    backgroundColor: '#e0f7fa',
+  },
+  unfollowButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Center the content
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    paddingHorizontal: 40,
+    marginBottom: 10,
+    backgroundColor: '#ffebee',
+  },
+  approveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Center the content
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    paddingHorizontal: 40,
+    marginBottom: 10,
+    backgroundColor: '#c8e6c9',
+  },
+  pendingText: {
+    fontSize: 16,
+    color: '#999999',
+    marginBottom: 10,
   },
 });
 
