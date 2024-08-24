@@ -266,3 +266,13 @@ export const requestToJoinQuest = async (questId) => {
 
     return request(`/quests/${questId}/request`, 'POST');
 };
+
+// Approve a participant
+export const approveParticipant = async (questId, participantId, authToken) => {
+  return request(`/quests/${questId}/request-approve`, 'POST', { userId: participantId }, authToken);
+};
+
+// Remove a participant
+export const removeParticipant = async (questId, participantId, authToken) => {
+  return request(`/quests/${questId}/request-delete`, 'DELETE', { userId: participantId }, authToken);
+};

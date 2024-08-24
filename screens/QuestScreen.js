@@ -5,7 +5,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
-import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest } from '../services/apiService';
+import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant } from '../services/apiService';
 import iconsData from '../assets/icons';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -164,6 +164,32 @@ const QuestScreen = ({ route }) => {
     }
   };
 
+  const handleApprove = async (questId, participantId) => {
+    try {
+      await approveParticipant(questId, participantId, authToken);
+      Alert.alert('Success', 'Participant approved.');
+      // Refresh the participants list after approval
+      const updatedParticipants = await fetchQuestParticipants(questId);
+      setParticipants(updatedParticipants);
+    } catch (error) {
+      console.error('Failed to approve participant:', error);
+      Alert.alert('Error', 'Failed to approve participant.');
+    }
+  };
+
+  const handleRemove = async (questId, participantId) => {
+    try {
+      await removeParticipant(questId, participantId, authToken);
+      Alert.alert('Success', 'Participant removed.');
+      // Refresh the participants list after removal
+      const updatedParticipants = await fetchQuestParticipants(questId);
+      setParticipants(updatedParticipants);
+    } catch (error) {
+      console.error('Failed to remove participant:', error);
+      Alert.alert('Error', 'Failed to remove participant.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
@@ -181,6 +207,10 @@ const QuestScreen = ({ route }) => {
           <View style={styles.buttonContainer}>
             {userRole === 'owner' || (userRole === 'participant' && userStatus === 'active') ? (
               <>
+                <TouchableOpacity style={styles.button} onPress={() => handleCheckinPress(questDetails.quest_id)}>
+                  <MaterialCommunityIcons name="check" size={20} color="#000" />
+                  <Text style={styles.buttonText}>Check in</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id)}>
                   <MaterialCommunityIcons name="chat" size={20} color="#000" />
                 </TouchableOpacity>
@@ -209,11 +239,11 @@ const QuestScreen = ({ route }) => {
             <ProgressBar
               progress={progress / 100}
               width={width * 0.8}
-              color="#4CAF50" // Green color for the bar
-              unfilledColor="#E0E0E0" // Light gray for the unfilled portion
-              borderWidth={0} // Remove border for a cleaner look
+              color="#4CAF50" // Green color
+              unfilledColor="#E0E0E0" // Light gray
+              borderWidth={0} // No border
               borderRadius={5} // Rounded corners
-              height={10} // Slimmer height
+              height={10} // Slim height
             />
             <Text style={styles.detailsText}>{`${progress.toFixed(2)}% complete`}</Text>
           </View>
@@ -264,13 +294,27 @@ const QuestScreen = ({ route }) => {
                   </Text>
                   <View style={styles.participantActions}>
                     {userRole === 'owner' && participant.status === 'pending' && (
-                      <TouchableOpacity style={styles.approveButton} >
-                        <Text style={styles.buttonText}>Approve</Text>
-                      </TouchableOpacity>
+                      <>
+                        <TouchableOpacity
+                          style={styles.approveButton}
+                          onPress={() => handleApprove(questDetails.quest_id, participant.user_id)}
+                        >
+                          <MaterialCommunityIcons name="check" size={20} color="#000" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.removeButton}
+                          onPress={() => handleRemove(questDetails.quest_id, participant.user_id)}
+                        >
+                          <MaterialCommunityIcons name="close" size={20} color="#000" />
+                        </TouchableOpacity>
+                      </>
                     )}
                     {userRole === 'owner' && participant.status === 'active' && participant.role === 'participant' && (
-                      <TouchableOpacity style={styles.removeButton} >
-                        <Text style={styles.buttonText}>Remove</Text>
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => handleRemove(questDetails.quest_id, participant.user_id)}
+                      >
+                        <MaterialCommunityIcons name="close" size={20} color="#000" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -280,7 +324,6 @@ const QuestScreen = ({ route }) => {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 };
