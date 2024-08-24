@@ -64,7 +64,7 @@ const NewQuestScreen = ({ route }) => {
   }, [questDetails]);
 
   const validateForm = () => {
-    if (!name || !description || !duration || !zoomLink) {
+    if (!name || !description || !duration) {
       alert('Please fill all the fields.');
       return false;
     }

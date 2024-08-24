@@ -32,8 +32,10 @@ const times = [
 
 const EditQuestScreen = ({ route }) => {
   const { questDetails } = route.params || {}; // Destructure the passed quest details
+
   const navigation = useNavigation();
   const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
+  
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
   const [description, setDescription] = useState(questDetails ? questDetails.description : '');
   const [duration, setDuration] = useState('');

@@ -180,6 +180,19 @@ export const fetchQuestParticipants = async (questId) => {
     return request(`/quests/${questId}/users`, 'GET');
 };
 
+// Fetch owner for quest
+export const fetchQuestOwner = async (questId) => {
+    return request(`/quests/${questId}/owner`, 'GET');
+};
+
+// Fetch category for a specific quest
+export const fetchQuestCategory = async (questId, owner_id) => {
+    if (!questId) {
+        throw new Error('Quest ID is required');
+    }
+    return request(`/quests/${questId}/category?ownerId=${owner_id}`, 'GET');
+};
+
 // Chat
 export const fetchMessages = async (questId, authToken) => {
     return request(`/quests/${questId}/messages`, 'GET', null, authToken);
@@ -244,4 +257,12 @@ export const fetchUserFriends = async (userId) => {
   console.log('users friends:');
   console.log(response);
   return response;
+};
+
+export const requestToJoinQuest = async (questId) => {
+    if (!questId) {
+        throw new Error('Quest ID is required');
+    }
+
+    return request(`/quests/${questId}/request`, 'POST');
 };
