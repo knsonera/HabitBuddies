@@ -9,7 +9,7 @@ import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { fetchUserInfo, fetchUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender } from '../services/apiService';
+import { fetchUserInfo, fetchUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender, fetchUserFriends } from '../services/apiService';
 
 
 const ProfileScreen = ({ route, navigation }) => {
@@ -25,12 +25,9 @@ const ProfileScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true); // Loading state
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isFriendRequestToCurrentUser, setIsFriendRequestToCurrentUser] = useState(false);
+  const [friendsList, setFriendsList] = useState([]);
 
   useEffect(() => {
-    //console.log('AuthContext currentUserId:', currentUserId);
-    console.log('Route userId:', routeUserId);
-    console.log('UserId to Fetch:', userIdToFetch);
-
     if (!userIdToFetch) {
       console.error('Error: User ID is undefined');
     }
@@ -45,11 +42,8 @@ const ProfileScreen = ({ route, navigation }) => {
           const senderResponse = await fetchFriendshipSender(userIdToFetch);
           const senderId = senderResponse.senderId;
 
-          // Determine if the current user is the recipient of the friend request
           const isFriendRequestToCurrentUser = senderId !== currentUserId;
           setIsFriendRequestToCurrentUser(isFriendRequestToCurrentUser);
-
-          console.log('Friendship status:', status, 'Sender ID:', senderId, 'Is request to current user:', isFriendRequestToCurrentUser);
         }
       } catch (error) {
         console.error('Error fetching friendship status:', error);
@@ -60,14 +54,8 @@ const ProfileScreen = ({ route, navigation }) => {
 
     const getUserData = async () => {
       try {
-        console.log('Fetching user data for userId:', userIdToFetch);
-        if (!userIdToFetch) {
-          throw new Error('User ID is required');
-        }
         const data = await fetchUserInfo(userIdToFetch);
-        console.log('Fetched user profile:', data);
 
-        // Assign a random avatar if the user doesn't have one
         if (!data.avatar_id) {
           const randomAvatar = avatarsData.avatars[Math.floor(Math.random() * avatarsData.avatars.length)].url;
           data.avatar_id = randomAvatar;
@@ -76,30 +64,43 @@ const ProfileScreen = ({ route, navigation }) => {
         setUserProfile(data);
         setIsCurrentUser(routeUserId == currentUserId);
 
-        // Fetch user's quests
-        console.log('Fetching user quests for userId:', userIdToFetch);
         const questsData = await fetchUserQuests(userIdToFetch);
+        console.log(questsData);
 
         const currentQuests = questsData.filter(quest => quest.status === 'active');
         const pastQuests = questsData.filter(quest => quest.status === 'completed' || quest.status === 'dropped');
 
-        console.log('Fetched user quests:', questsData);
         setUserQuests({
           current: currentQuests || [],
           past: pastQuests || [],
         });
+
       } catch (error) {
         console.error('Failed to load user data:', error);
-        setUserQuests({ current: [], past: [] }); // Ensure it's an object with arrays in case of error
+        setUserQuests({ current: [], past: [] });
       } finally {
-        setLoading(false); // Set loading to false after data is fetched
+        setLoading(false);
       }
     };
 
     getUserData();
   }, [userIdToFetch, currentUserId]);
 
-  // Function to get avatar URL by avatar ID
+  useEffect(() => {
+    if (modalVisible) {
+      const fetchFriends = async () => {
+        try {
+          const friends = await fetchUserFriends(userIdToFetch);
+          setFriendsList(friends);
+        } catch (error) {
+          console.error('Failed to fetch friends list:', error);
+        }
+      };
+
+      fetchFriends();
+    }
+  }, [modalVisible, userIdToFetch]);
+
   const getAvatarUrl = (avatarId) => {
     const avatar = avatarsData.avatars.find((a) => a.id === avatarId);
     return avatar ? avatar.url : null;
@@ -107,7 +108,6 @@ const ProfileScreen = ({ route, navigation }) => {
 
   const handleAddFriend = async () => {
     try {
-      console.log("Sending friend request from:", currentUserId, "to:", userIdToFetch);
       const response = await requestFriendship(userIdToFetch);
       if (response.status === 200) {
         setFriendshipStatus('pending');
@@ -161,7 +161,6 @@ const ProfileScreen = ({ route, navigation }) => {
     }
 
     if (friendshipStatus === 'pending' && !isFriendRequestToCurrentUser) {
-      console.log('Friendship pending');
       return <Text style={styles.pendingText}>Friend Request Sent</Text>;
     }
 
@@ -179,13 +178,13 @@ const ProfileScreen = ({ route, navigation }) => {
       return (
         <TouchableOpacity style={styles.approveButton} onPress={handleApproveFriend}>
           <Text style={styles.approveButtonText}>
-            <Icon name="user-check" size={16} color="#000000" /> Become Friends
+            <Icon name="user-plus" size={16} color="#000000" /> Become Friends
           </Text>
         </TouchableOpacity>
       );
     }
 
-    return null; // Default case if no conditions are met
+    return null;
   };
 
   if (loading) {
@@ -212,10 +211,6 @@ const ProfileScreen = ({ route, navigation }) => {
       </SafeAreaView>
     );
   }
-
-  console.log('Rendering ProfileScreen with userProfile:', userProfile);
-  console.log('Current quests:', userQuests.current);
-  console.log('Past quests:', userQuests.past);
 
   const avatarUrl = getAvatarUrl(userProfile.avatar_id);
 
@@ -244,44 +239,50 @@ const ProfileScreen = ({ route, navigation }) => {
               <TouchableOpacity style={styles.summaryItem} onPress={() => setModalVisible(true)}>
                 <Icon name="users" size={24} color="#000000" />
                 <Text style={styles.summaryTitle}>Friends</Text>
-                <Text style={styles.summaryValue}>{userProfile.friends}</Text>
+                <Text style={styles.summaryValue}>{friendsList.length}</Text>
               </TouchableOpacity>
             </View>
           </View>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Achievements</Text>
-            <View style={styles.achievementsSection}>
-              {/* Display achievements here */}
-            </View>
-          </View>
-          {!isCurrentUser && (
-            <>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Current Quests</Text>
-                <View style={styles.questsSection}>
-                  {userQuests.current.map((quest) => (
-                    <TouchableOpacity
-                      key={quest.id}
-                      style={styles.questItem}
-                      onPress={() => navigation.navigate('QuestDetails', { questId: quest.id })}
-                    >
-                      <Text style={styles.questText}>{quest.title}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Past Quests</Text>
-                <View style={styles.questsSection}>
-                  {userQuests.past.map((quest) => (
-                    <View key={quest.id} style={styles.questItem}>
-                      <Text style={styles.questText}>{quest.title}</Text>
+            <Text style={styles.sectionTitle}>Current Quests</Text>
+            {userQuests.current.length === 0 ? (
+              <Text style={styles.noQuestsText}>No current quests</Text>
+            ) : (
+              <FlatList
+                data={userQuests.current}
+                keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.questItem}
+                    onPress={() => navigation.navigate('Quest', { questDetails: item })}
+                  >
+                    <View style={styles.questInfo}>
+                      <Text style={styles.questTitle}>{item.quest_name}</Text>
                     </View>
-                  ))}
-                </View>
-              </View>
-            </>
-          )}
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Past Quests</Text>
+            {userQuests.past.length === 0 ? (
+              <Text style={styles.noQuestsText}>No past quests</Text>
+            ) : (
+              <FlatList
+                data={userQuests.past}
+                keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.questItem}
+                    onPress={() => navigation.navigate('QuestDetails', { questId: item.id })}
+                  >
+                    <Text style={styles.questText}>{item.title}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
         </View>
       </ScrollView>
       <Footer />
@@ -296,20 +297,23 @@ const ProfileScreen = ({ route, navigation }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Friends</Text>
             <FlatList
-              data={userProfile.friendsList}
-              keyExtractor={(item) => item.id}
+              data={friendsList}
+              keyExtractor={(item) => item.user_id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.friendItem}
                   onPress={() => {
                     setModalVisible(false);
-                    navigation.navigate('Profile', { userId: item.id });
+                    navigation.navigate('Profile', { userId: item.user_id });
                   }}
                 >
-                  <Image source={{ uri: item.avatar }} style={styles.friendAvatar} />
+                  <Image
+                    source={{ uri: getAvatarUrl(item.avatar_id) }}
+                    style={styles.friendAvatar}
+                  />
                   <View style={styles.friendInfo}>
-                    <Text style={styles.friendName}>{item.fullName}</Text>
-                    <Text style={styles.friendLogin}>{item.login}</Text>
+                    <Text style={styles.friendName}>{item.fullname}</Text>
+                    <Text style={styles.friendLogin}>{item.username}</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -351,6 +355,8 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#000', // Add border for modern look
   },
   fullName: {
     fontSize: 24,
@@ -377,6 +383,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 40,
     marginBottom: 10,
+    backgroundColor: '#fff',
+    shadowColor: '#000', // Add shadow for modern effect
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   addButtonText: {
     color: '#000000',
@@ -394,7 +406,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 40,
     marginBottom: 10,
-    backgroundColor: '#ffcc00', // Bright yellow for visibility
+    backgroundColor: '#fff',
+    shadowColor: '#000', // Add shadow for modern effect
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   followButtonText: {
     color: '#000000',
@@ -411,6 +428,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'left',
     width: '100%',
+    color: '#000', // Black text for modern look
   },
   questsSection: {
     alignItems: 'flex-start',
@@ -421,12 +439,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
     padding: 15,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#fff',
     borderRadius: 10,
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 3,
   },
@@ -442,10 +460,15 @@ const styles = StyleSheet.create({
   summaryItem: {
     width: '48%',
     marginBottom: 10,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
     alignItems: 'center',
+    shadowColor: '#000', // Add shadow for modern effect
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   summaryTitle: {
     fontSize: 16,
@@ -474,93 +497,140 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker background for sleek effect
   },
   modalContent: {
-    width: '80%',
+    width: '90%',
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 20,
     alignItems: 'center',
+    maxHeight: '80%',
+    shadowColor: '#000', // Add shadow for modern effect
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#000',
     marginBottom: 20,
   },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    padding: 15,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    width: '100%', // Make sure the item takes up the full width
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  friendInfo: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    width: '100%', // Ensure the info section also takes up full width
   },
   friendAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 10,
-  },
-  friendInfo: {
-    flexDirection: 'column',
+    marginRight: 15, // Add space between the avatar and the text
   },
   friendName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#333',
   },
   friendLogin: {
     fontSize: 14,
-    color: '#888',
+    color: '#666',
+    marginTop: 2,
   },
   closeButton: {
-    backgroundColor: '#444444',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    backgroundColor: '#333',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 8,
     marginTop: 20,
+    alignItems: 'center',
   },
   closeButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
   },
-  followButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center', // Center the content
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 10,
-    paddingHorizontal: 40,
-    marginBottom: 10,
-    backgroundColor: '#e0f7fa',
-  },
   unfollowButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Center the content
+    justifyContent: 'center',
     padding: 10,
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
     paddingHorizontal: 40,
     marginBottom: 10,
-    backgroundColor: '#ffebee',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   approveButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Center the content
+    justifyContent: 'center',
     padding: 10,
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
     paddingHorizontal: 40,
     marginBottom: 10,
-    backgroundColor: '#c8e6c9',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
   },
   pendingText: {
     fontSize: 16,
     color: '#999999',
     marginBottom: 10,
+  },
+  noQuestsText: {
+    fontSize: 16,
+    color: '#999999',
+    textAlign: 'left',
+  },
+  questItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    padding: 15,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  questInfo: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  questTitle: {
+    fontSize: 16,
+    color: '#333',
   },
 });
 

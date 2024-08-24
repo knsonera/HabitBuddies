@@ -238,3 +238,10 @@ export const fetchFriendshipSender = async (friendId) => {
     }
     return request(`/friendships/sender?userId=${userId}&friendId=${friendId}`, 'GET');
 };
+
+export const fetchUserFriends = async (userId) => {
+  const response = await request(`/users/${userId}/friends`, 'GET');
+  console.log('users friends:');
+  console.log(response);
+  return response;
+};

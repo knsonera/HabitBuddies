@@ -119,7 +119,10 @@ const QuestScreen = ({ route }) => {
             <Text style={styles.modalTitle}>Participants</Text>
             <ScrollView style={styles.participantsList}>
               {participants.map((participant, index) => (
-                <TouchableOpacity key={index} style={styles.participantItem}>
+                <TouchableOpacity key={index} style={styles.participantItem} onPress={() => {
+                  setModalVisible(false);
+                  navigation.navigate('Profile', { userId: participant.user_id });
+                }}>
                   <Text style={styles.participantText}>{participant.fullname} ({participant.username})</Text>
                 </TouchableOpacity>
               ))}
