@@ -323,6 +323,13 @@ export const fetchUserCheckInsForQuest = async (questId, userId) => {
     return request(`/quests/${questId}/users/${userId}/checkins`, 'GET');
 };
 
+export const fetchUserCheckInsForQuestToday = async (questId, userId) => {
+    if (!questId || !userId) {
+        throw new Error('Quest ID and User ID are required');
+    }
+    return request(`/quests/${questId}/users/${userId}/checkins/today`, 'GET');
+};
+
 export const fetchUserCheckIns = async (userId) => {
     if (!userId) {
         throw new Error('User ID is required');
@@ -330,10 +337,9 @@ export const fetchUserCheckIns = async (userId) => {
     return request(`/users/${userId}/checkins`, 'GET');
 };
 
-// Check if the user has checked in today for a specific quest
-export const checkedInToday = async (questId) => {
-    if (!questId) {
-        throw new Error('Quest ID is required');
+export const fetchUserCheckInsToday = async (userId) => {
+    if (!userId) {
+        throw new Error('User ID is required');
     }
-    return request(`/quests/${questId}/checkins/today`, 'GET');
+    return request(`/users/${userId}/checkins/today`, 'GET');
 };

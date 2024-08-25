@@ -5,7 +5,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
-import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite, createCheckIn } from '../services/apiService';
+import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite, createCheckIn, fetchQuestCheckIns, fetchUserCheckInsForQuestToday } from '../services/apiService';
 import iconsData from '../assets/icons';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -29,19 +29,18 @@ const QuestScreen = ({ route }) => {
         Alert.alert('Error', 'User ID could not be retrieved.');
         return; // Stop further actions if user ID is missing
       }
-      // Proceed with actions that depend on userId
     };
     verifyUserId();
   }, []);
 
   const [participants, setParticipants] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [confirmationVisible, setConfirmationVisible] = useState(false); // State for confirmation modal
-  const [inviteModalVisible, setInviteModalVisible] = useState(false); // State for Invite Friends modal
-  const [checkinModalVisible, setCheckinModalVisible] = useState(false); // State for Checkin modal
-  const [friends, setFriends] = useState([]); // State for friends list
-  const [filteredFriends, setFilteredFriends] = useState([]); // State for filtered friends list
-  const [searchQuery, setSearchQuery] = useState(''); // State for search input
+  const [confirmationVisible, setConfirmationVisible] = useState(false);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [checkinModalVisible, setCheckinModalVisible] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [filteredFriends, setFilteredFriends] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [category, setCategory] = useState('');
   const [progress, setProgress] = useState(0);
@@ -49,6 +48,8 @@ const QuestScreen = ({ route }) => {
   const [userStatus, setUserStatus] = useState(null);
   const [ownerId, setOwnerId] = useState(null);
   const [comment, setComment] = useState([]);
+  const [checkIns, setCheckIns] = useState([]);
+  const [checkedIn, setCheckedIn] = useState(false);
 
   const parseDuration = (duration) => {
     const [amount, unit] = duration.split(' ');
@@ -81,8 +82,8 @@ const QuestScreen = ({ route }) => {
     const start = new Date(startDate);
     const now = new Date();
 
-    const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24)); // Difference in days
-    const progress = Math.min((daysPassed / totalDays) * 100, 100); // Doesn't exceed 100%
+    const daysPassed = Math.ceil((now - start) / (1000 * 60 * 60 * 24)); // Difference in days
+    const progress = Math.max(0, Math.min((daysPassed / totalDays) * 100, 100));
 
     return progress;
   };
@@ -105,6 +106,12 @@ const QuestScreen = ({ route }) => {
         // Load Participants and Set User Role
         const questParticipants = await fetchQuestParticipants(questDetails.quest_id);
         setParticipants(questParticipants);
+
+        const questCheckIns = await fetchQuestCheckIns(questDetails.quest_id);
+        setCheckIns(questCheckIns);
+
+        const isCheckedIn = await fetchUserCheckInsForQuestToday(questDetails.quest_id, currentUserId);
+        setCheckedIn(isCheckedIn);
 
         const currentUser = questParticipants.find(p => p.user_id === currentUserId);
         if (currentUser) {
@@ -174,6 +181,11 @@ const QuestScreen = ({ route }) => {
         try {
             await createCheckIn(questDetails.quest_id, comment); // Pass correct quest_id
             Alert.alert('Success', 'Check-in submitted successfully.');
+
+            // Fetch the updated check-ins
+            const updatedCheckIns = await fetchQuestCheckIns(questDetails.quest_id);
+            setCheckIns(updatedCheckIns); // Update the state with the new check-ins
+
             setCheckinModalVisible(false); // Close the modal after submission
             setComment(''); // Clear the comment field
         } catch (error) {
@@ -315,9 +327,20 @@ const QuestScreen = ({ route }) => {
           <View style={styles.buttonContainer}>
             {userRole === 'owner' || (userRole === 'participant' && userStatus === 'active') ? (
               <>
-                <TouchableOpacity style={styles.button} onPress={() => handleCheckinPress(questDetails.quest_id)}>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    checkedIn && { backgroundColor: '#CCFFCC' }
+                  ]}
+                  onPress={() => !checkedIn && handleCheckinPress(questDetails.quest_id)}
+                  disabled={checkedIn}
+                >
                   <MaterialCommunityIcons name="check" size={20} color="#000" />
-                  <Text style={styles.buttonText}>Check in</Text>
+                  {checkedIn ? (
+                    <Text style={styles.buttonText}>Checked in</Text>
+                  ) : (
+                    <Text style={styles.buttonText}>Check in</Text>
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id)}>
                   <MaterialCommunityIcons name="chat" size={20} color="#000" />
@@ -352,26 +375,28 @@ const QuestScreen = ({ route }) => {
             )}
           </View>
 
+          {/* Progress Bar */}
+          <View style={styles.progressBarContainer}>
+            <Text style={styles.detailsText}>Current Progress</Text>
+            <ProgressBar
+              progress={progress / 100}
+              width={width * 0.9}
+              color="#4CAF50"
+              unfilledColor="#E0E0E0"
+              borderWidth={0}
+              borderRadius={5}
+              height={10}
+            />
+            <Text style={styles.detailsText}>{`${progress.toFixed(0)}% complete`}</Text>
+          </View>
+
           <View style={styles.detailsContainer}>
+            <Text style={styles.sectionTitle}>Quest Information</Text>
             <Text style={styles.detailsText}>{questDetails.description}</Text>
             <Text style={styles.detailsText}>Category: {category || 'Loading...'}</Text>
             <Text style={styles.detailsText}>Duration: {questDetails.duration}</Text>
           </View>
 
-          {/* Progress Bar */}
-          <View style={styles.progressBarContainer}>
-            <Text style={styles.detailsText}>Progress:</Text>
-            <ProgressBar
-              progress={progress / 100}
-              width={width * 0.8}
-              color="#4CAF50" // Green color
-              unfilledColor="#E0E0E0" // Light gray
-              borderWidth={0} // No border
-              borderRadius={5} // Rounded corners
-              height={10} // Slim height
-            />
-            <Text style={styles.detailsText}>{`${progress.toFixed(2)}% complete`}</Text>
-          </View>
 
           <View style={styles.actionButtonContainer}>
             {(userRole === 'owner' || (userRole === 'participant' && userStatus === 'active')) && (
@@ -400,10 +425,30 @@ const QuestScreen = ({ route }) => {
             )}
           </View>
 
+          {/* Check-ins by Participants */}
+          <View style={styles.checkinSection}>
+            <Text style={styles.sectionTitle}>Check-Ins</Text>
+            {checkIns.length === 0 ? (
+              <Text style={styles.noCheckinsText}>No check-ins yet.</Text>
+            ) : (
+              checkIns.map((checkin, index) => (
+                <View key={index} style={styles.checkinItem}>
+                  <View style={styles.checkinHeader}>
+                    <MaterialCommunityIcons name="check-circle" size={20} color="#000" style={styles.checkmarkIcon} />
+                    <Text style={styles.checkinUser}>{checkin.fullname}</Text>
+                    <Text style={styles.checkinDate}>{new Date(checkin.checkin_date).toLocaleDateString()}</Text>
+                  </View>
+                  <Text style={styles.checkinComment}>{checkin.comment}</Text>
+                </View>
+              ))
+            )}
+          </View>
+
         </View>
       </ScrollView>
       <Footer />
 
+      {/* Participants Modal */}
       <Modal
         transparent={true}
         visible={modalVisible}
@@ -581,7 +626,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   challengeName: {
     fontSize: 24,
@@ -594,19 +639,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // Align buttons in a row
     justifyContent: 'center', // Center the buttons horizontally
     alignItems: 'center', // Center the buttons vertically
-    paddingHorizontal: 15, // Add padding to the container
     marginVertical: 10, // Vertical margin for spacing
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
     backgroundColor: '#f5f5f5', // Light background for better visibility
-    marginHorizontal: 10, // Add spacing between buttons
+    marginHorizontal: 5, // Add spacing between buttons
     justifyContent: 'center', // Center the content inside the button
   },
   buttonText: {
@@ -616,18 +660,21 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     alignItems: 'flex-start',
-    width: '80%',
-    marginVertical: 20,
+    width: '100%',
+    marginVertical: 10,
+    paddingHorizontal: 10,
   },
   detailsText: {
     fontSize: 16,
     marginVertical: 5,
     color: '#000000',
+    paddingHorizontal: 10,
   },
   progressBarContainer: {
-    width: '80%',
-    alignItems: 'flex-start',
+    width: '100%',
+    alignItems: 'center',
     marginVertical: 20,
+    paddingHorizontal: 10,
   },
   progressLabel: {
     fontSize: 16,
@@ -636,7 +683,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    color: '#4CAF50', // Same color as the progress bar
+    color: '#000', // Same color as the progress bar
     marginTop: 5,
   },
   actionButtonContainer: {
@@ -645,7 +692,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // Align buttons in a row
     flexWrap: 'wrap', // Allow buttons to wrap to the next line if necessary
     justifyContent: 'center', // Center the buttons
-    marginVertical: 10,
   },
   actionButton: {
     flexDirection: 'row',
@@ -755,7 +801,7 @@ const styles = StyleSheet.create({
   confirmationText: {
     fontSize: 18,
     color: '#000',
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: 'center',
   },
   confirmationButtonsContainer: {
@@ -847,6 +893,58 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  checkinSection: {
+    width: '100%',
+    marginVertical: 10,
+    paddingHorizontal: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  noCheckinsText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+  },
+  checkinItem: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  checkinHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', // Space between name and date
+    marginBottom: 5,
+  },
+  checkmarkIcon: {
+    marginRight: 8,
+  },
+  checkinUser: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1, // Allows the name to take up available space
+  },
+  checkinDate: {
+    fontSize: 12,
+    color: '#999',
+  },
+  checkinComment: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
   },
 });
 

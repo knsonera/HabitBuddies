@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, checkedInToday } from '../services/apiService';
+import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, fetchUserCheckInsToday } from '../services/apiService';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -30,6 +30,16 @@ const HomeScreen = () => {
     }
   };
 
+  const loadTodayCheckIns = async () => {
+    try {
+      const todayCheckIns = await fetchUserCheckInsToday(userId); // You need to implement this in your apiService
+      console.log(todayCheckIns);
+      setCheckins(todayCheckIns);
+    } catch (error) {
+      console.error('Failed to load today\'s check-ins:', error);
+    }
+  };
+
   const loadUserQuests = async () => {
     try {
         const userQuests = await fetchUserQuests(userId); // Ensure tokens are refreshed if necessary
@@ -44,6 +54,7 @@ const HomeScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       loadUserQuests();
+      loadTodayCheckIns();
     }, [userId])
   );
 
@@ -122,6 +133,10 @@ const HomeScreen = () => {
       navigation.navigate('NewQuest', { onCreateQuest: handleQuestCreation });
   };
 
+  const hasCheckedInToday = (questId) => {
+    return checkins.some(checkin => checkin.quest_id === questId);
+  };
+
   const activeQuests = quests.filter(quest => quest.user_status === 'active');
   const pendingQuests = quests.filter(quest => quest.user_status === 'pending');
   const invitedQuests = quests.filter(quest => quest.user_status === 'invited');
@@ -129,6 +144,8 @@ const HomeScreen = () => {
   console.log('Invited Quests:', invitedQuests);
   console.log('Active Quests:', activeQuests);
   console.log('Pending Quests:', pendingQuests);
+
+  console.log('Checkins: ', checkins);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -182,8 +199,17 @@ const HomeScreen = () => {
                 {activeQuests.map((quest) => {
                   const iconId = quest.icon_id;
                   const icon = getIconById(iconId);
+                  const checkedIn = hasCheckedInToday(quest.quest_id);
+
                   return (
-                    <TouchableOpacity key={quest.user_quest_id} style={styles.questContainer} onPress={() => handleQuestPress(quest)}>
+                    <TouchableOpacity
+                      key={quest.user_quest_id}
+                      style={[
+                        styles.questContainer,
+                        checkedIn && { backgroundColor: '#CCFFCC' }
+                      ]}
+                      onPress={() => handleQuestPress(quest)}
+                    >
                       {icon ? (
                         icon.library === 'FontAwesome' ? (
                           <Icon name={icon.name} size={20} style={styles.questIcon} />
@@ -191,12 +217,16 @@ const HomeScreen = () => {
                           <MaterialCommunityIcons name={icon.name} size={20} style={styles.questIcon} />
                         )
                       ) : (
-                        <Icon name="question-circle" size={20} style={styles.questIcon} /> // Fallback icon
+                        <Icon name="star" size={20} style={styles.questIcon} /> // Fallback icon
                       )}
                       <Text style={styles.questName}>{quest.quest_name}</Text>
                       <TouchableOpacity
-                        style={styles.checkmarkButton}
-                        onPress={() => handleCheckmarkPress(quest)}
+                        style={[
+                          styles.checkmarkButton,
+                          checkedIn && { backgroundColor: '#006600' }
+                        ]}
+                        onPress={() => !checkedIn && handleCheckmarkPress(quest)}
+                        disabled={checkedIn}
                       >
                         <Icon name="check" size={30} style={styles.checkmarkIcon} />
                       </TouchableOpacity>
