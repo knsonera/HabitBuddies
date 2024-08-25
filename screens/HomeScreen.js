@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite } from '../services/apiService';
+import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, checkedInToday } from '../services/apiService';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -33,6 +33,7 @@ const HomeScreen = () => {
   const loadUserQuests = async () => {
     try {
         const userQuests = await fetchUserQuests(userId); // Ensure tokens are refreshed if necessary
+
         console.log('Fetched Quests:', userQuests); // What is being fetched?
         setQuests(userQuests);
     } catch (error) {
@@ -58,10 +59,21 @@ const HomeScreen = () => {
     return iconsData.icons[iconId];
   };
 
-  const handleCheckInSubmit = (comment) => {
-    console.log('Check-in in development');
-    console.log('Comment received: ', comment);
-  }
+  const handleCheckInSubmit = async () => {
+    if (selectedQuest && comment.trim()) {
+      try {
+        await createCheckIn(selectedQuest.quest_id, comment);
+        Alert.alert('Success', 'Check-in submitted successfully.');
+        setModalVisible(false);
+        setComment(''); // Clear the comment field
+      } catch (error) {
+        console.error('Failed to submit check-in:', error);
+        Alert.alert('Error', 'Failed to submit check-in.');
+      }
+    } else {
+      Alert.alert('Error', 'Please enter a comment.');
+    }
+  };
 
   const handleCheckmarkPress = (quest) => {
     setSelectedQuest(quest);

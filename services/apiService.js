@@ -300,3 +300,40 @@ export const declineQuestInvite = async (questId) => {
 
     return request(`/quests/${questId}/invite-delete`, 'DELETE');
 };
+
+export const createCheckIn = async (questId, comment = '') => {
+    const userId = await getUserId();
+    if (!questId || !userId) {
+        throw new Error('Quest ID and User ID are required');
+    }
+    return request(`/quests/${questId}/checkins`, 'POST', { user_id: userId, comment });
+};
+
+export const fetchQuestCheckIns = async (questId) => {
+    if (!questId) {
+        throw new Error('Quest ID is required');
+    }
+    return request(`/quests/${questId}/checkins`, 'GET');
+};
+
+export const fetchUserCheckInsForQuest = async (questId, userId) => {
+    if (!questId || !userId) {
+        throw new Error('Quest ID and User ID are required');
+    }
+    return request(`/quests/${questId}/users/${userId}/checkins`, 'GET');
+};
+
+export const fetchUserCheckIns = async (userId) => {
+    if (!userId) {
+        throw new Error('User ID is required');
+    }
+    return request(`/users/${userId}/checkins`, 'GET');
+};
+
+// Check if the user has checked in today for a specific quest
+export const checkedInToday = async (questId) => {
+    if (!questId) {
+        throw new Error('Quest ID is required');
+    }
+    return request(`/quests/${questId}/checkins/today`, 'GET');
+};

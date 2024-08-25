@@ -5,7 +5,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
-import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite } from '../services/apiService';
+import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite, createCheckIn } from '../services/apiService';
 import iconsData from '../assets/icons';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -38,6 +38,7 @@ const QuestScreen = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [confirmationVisible, setConfirmationVisible] = useState(false); // State for confirmation modal
   const [inviteModalVisible, setInviteModalVisible] = useState(false); // State for Invite Friends modal
+  const [checkinModalVisible, setCheckinModalVisible] = useState(false); // State for Checkin modal
   const [friends, setFriends] = useState([]); // State for friends list
   const [filteredFriends, setFilteredFriends] = useState([]); // State for filtered friends list
   const [searchQuery, setSearchQuery] = useState(''); // State for search input
@@ -47,6 +48,7 @@ const QuestScreen = ({ route }) => {
   const [userRole, setUserRole] = useState(null);
   const [userStatus, setUserStatus] = useState(null);
   const [ownerId, setOwnerId] = useState(null);
+  const [comment, setComment] = useState([]);
 
   const parseDuration = (duration) => {
     const [amount, unit] = duration.split(' ');
@@ -127,14 +129,6 @@ const QuestScreen = ({ route }) => {
 
   const icon = iconsData.icons[questDetails.icon_id];
 
-  const handleVideoPress = (zoom_link) => {
-    if (zoom_link) {
-      Linking.openURL(zoom_link).catch(err => console.error("Failed to open link: ", err));
-    } else {
-      alert("No video link added yet. Edit quest to link a video conference.");
-    }
-  };
-
   const handleParticipantsPress = async (quest_id) => {
       try {
           const questParticipants = await fetchQuestParticipants(quest_id);
@@ -162,6 +156,38 @@ const QuestScreen = ({ route }) => {
   const handleChatPress = (questId) => {
     navigation.navigate('Chat', { questId });
   };
+
+  const handleVideoPress = (zoom_link) => {
+    if (zoom_link) {
+      Linking.openURL(zoom_link).catch(err => console.error("Failed to open link: ", err));
+    } else {
+      alert("No video link added yet. Edit quest to link a video conference.");
+    }
+  };
+
+  const handleCheckinPress = (questId) => {
+    setCheckinModalVisible(true);
+  };
+
+  const handleCheckInSubmit = async () => {
+    if (comment.trim()) {
+        try {
+            await createCheckIn(questDetails.quest_id, comment); // Pass correct quest_id
+            Alert.alert('Success', 'Check-in submitted successfully.');
+            setCheckinModalVisible(false); // Close the modal after submission
+            setComment(''); // Clear the comment field
+        } catch (error) {
+            console.error('Failed to submit check-in:', error);
+            if (error.message.includes('You have already checked in today')) {
+                Alert.alert('Duplicate Check-In', 'You have already checked in today for this quest.');
+            } else {
+                Alert.alert('Error', 'Failed to submit check-in. Please try again later.');
+            }
+        }
+    } else {
+        Alert.alert('Error', 'Please enter a comment.');
+    }
+};
 
   const handleEndPress = () => {
     setConfirmationVisible(true); // Show confirmation modal
@@ -492,6 +518,45 @@ const QuestScreen = ({ route }) => {
         </View>
       </Modal>
 
+      {/* Checkin Modal */}
+      <Modal
+          transparent={true}
+          visible={checkinModalVisible} // Ensure you're using the correct state here
+          onRequestClose={() => setCheckinModalVisible(false)}
+      >
+        <View style={styles.checkinModalContainer}>
+          <View style={styles.checkinModalContent}>
+
+            {/* Close Button */}
+            <TouchableOpacity style={styles.closeButton} onPress={() => setCheckinModalVisible(false)}>
+              <Icon name="close" size={24} color="#000" />
+            </TouchableOpacity>
+
+            {/* Title */}
+            <Text style={styles.checkinModalTitle}>Checking-in</Text>
+
+            <Text style={styles.checkinModalDateTime}>{questDetails.quest_name}</Text>
+
+            {/* Current Date and Time */}
+            <Text style={styles.checkinModalDateTime}>{new Date().toLocaleString()}</Text>
+
+            {/* Text Field for Note or Comment */}
+            <TextInput
+              style={styles.textField}
+              placeholder="Add a note or comment..."
+              onChangeText={setComment}
+              value={comment}
+            />
+
+            {/* Submit Button */}
+            <TouchableOpacity style={styles.checkinSubmitButton} onPress={handleCheckInSubmit}>
+              <Text style={styles.checkinSubmitButtonText}>Submit</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -726,6 +791,62 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderRadius: 5,
+  },
+  checkinModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent black background
+  },
+  checkinModalContent: {
+    width: '80%',
+    backgroundColor: '#fff', // White background for the modal content
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000', // Shadow properties for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5, // Elevation for Android
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  checkinModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333', // Darker text for contrast
+  },
+  checkinModalDateTime: {
+    fontSize: 16,
+    color: '#666', // Lighter gray for date and time
+    marginBottom: 20,
+  },
+  textField: {
+    width: '100%',
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    backgroundColor: '#f9f9f9', // Light background for the input field
+  },
+  checkinSubmitButton: {
+    width: '50%',
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  checkinSubmitButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
