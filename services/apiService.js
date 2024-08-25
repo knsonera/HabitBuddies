@@ -276,3 +276,27 @@ export const approveParticipant = async (questId, participantId, authToken) => {
 export const removeParticipant = async (questId, participantId, authToken) => {
   return request(`/quests/${questId}/request-delete`, 'DELETE', { userId: participantId }, authToken);
 };
+
+export const inviteFriendToQuest = async (questId, friendId, currentUserId) => {
+    if (!questId || !friendId || !currentUserId) {
+        throw new Error('Quest ID and Friend ID are required');
+    }
+
+    return request(`/quests/${questId}/invite`, 'POST', { userId: friendId, inviterId: currentUserId });
+};
+
+export const acceptQuestInvite = async (questId) => {
+    if (!questId) {
+        throw new Error('Quest ID is required');
+    }
+
+    return request(`/quests/${questId}/invite-accept`, 'POST');
+};
+
+export const declineQuestInvite = async (questId) => {
+    if (!questId) {
+        throw new Error('Quest ID is required');
+    }
+
+    return request(`/quests/${questId}/invite-delete`, 'DELETE');
+};

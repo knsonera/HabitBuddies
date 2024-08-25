@@ -41,16 +41,25 @@ export const clearAuthToken = async () => {
 };
 
 export const getUserId = async () => {
-    if (!userId) {
+    try {
         const userIdString = await AsyncStorage.getItem('userId');
         console.log('AsyncStorage returned userIdString:', userIdString);
+
         if (userIdString) {
-            userId = JSON.parse(userIdString).userId;
-            console.log('Parsed userId:', userId);
+            const parsedData = JSON.parse(userIdString);
+            if (parsedData && parsedData.userId) {
+                console.log('Parsed userId:', parsedData.userId);
+                return parsedData.userId;
+            } else {
+                console.error('Parsed data does not contain userId');
+                return null;
+            }
         } else {
             console.log('No userId found in AsyncStorage');
+            return null;
         }
+    } catch (error) {
+        console.error('Error retrieving userId from AsyncStorage:', error);
+        return null;
     }
-    console.log('get user id: ', userId);
-    return userId;
 };

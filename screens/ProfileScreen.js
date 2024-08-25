@@ -9,7 +9,7 @@ import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { fetchUserInfo, fetchUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender, fetchUserFriends } from '../services/apiService';
+import { fetchUserInfo, fetchUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender, fetchUserFriends, acceptQuestInvite, declineQuestInvite } from '../services/apiService';
 
 
 const ProfileScreen = ({ route, navigation }) => {
@@ -27,77 +27,79 @@ const ProfileScreen = ({ route, navigation }) => {
   const [isFriendRequestToCurrentUser, setIsFriendRequestToCurrentUser] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
 
+  const checkFriendshipStatus = async () => {
+    try {
+      const response = await fetchFriendshipStatus(userIdToFetch);
+      const status = response.status;
+      setFriendshipStatus(status);
+
+      if (status === 'pending') {
+        const senderResponse = await fetchFriendshipSender(userIdToFetch);
+        const senderId = senderResponse.senderId;
+
+        const isFriendRequestToCurrentUser = senderId !== currentUserId;
+        setIsFriendRequestToCurrentUser(isFriendRequestToCurrentUser);
+      }
+    } catch (error) {
+      console.error('Error fetching friendship status:', error);
+    }
+  };
+
+  const getFriendsData = async () => {
+    try {
+      const friends = await fetchUserFriends(userIdToFetch);
+      console.log('Friends List:', friends); // Log the fetched friends
+      setFriendsList(friends);
+    } catch (error) {
+      console.error('Failed to fetch friends list:', error);
+    }
+  };
+
+  const getUserData = async () => {
+    try {
+      const data = await fetchUserInfo(userIdToFetch);
+
+      if (!data.avatar_id) {
+        const randomAvatar = avatarsData.avatars[Math.floor(Math.random() * avatarsData.avatars.length)].url;
+        data.avatar_id = randomAvatar;
+      }
+
+      setUserProfile(data);
+      setIsCurrentUser(routeUserId == currentUserId);
+
+      const questsData = await fetchUserQuests(userIdToFetch);
+      console.log(questsData);
+
+      const currentQuests = questsData.filter(quest => quest.status === 'active');
+      const pastQuests = questsData.filter(quest => quest.status === 'completed' || quest.status === 'dropped');
+
+      setUserQuests({
+        current: currentQuests || [],
+        past: pastQuests || [],
+      });
+
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+      setUserQuests({ current: [], past: [] });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     if (!userIdToFetch) {
       console.error('Error: User ID is undefined');
     }
-
-    const checkFriendshipStatus = async () => {
-      try {
-        const response = await fetchFriendshipStatus(userIdToFetch);
-        const status = response.status;
-        setFriendshipStatus(status);
-
-        if (status === 'pending') {
-          const senderResponse = await fetchFriendshipSender(userIdToFetch);
-          const senderId = senderResponse.senderId;
-
-          const isFriendRequestToCurrentUser = senderId !== currentUserId;
-          setIsFriendRequestToCurrentUser(isFriendRequestToCurrentUser);
-        }
-      } catch (error) {
-        console.error('Error fetching friendship status:', error);
-      }
-    };
-
     checkFriendshipStatus();
-
-    const getUserData = async () => {
-      try {
-        const data = await fetchUserInfo(userIdToFetch);
-
-        if (!data.avatar_id) {
-          const randomAvatar = avatarsData.avatars[Math.floor(Math.random() * avatarsData.avatars.length)].url;
-          data.avatar_id = randomAvatar;
-        }
-
-        setUserProfile(data);
-        setIsCurrentUser(routeUserId == currentUserId);
-
-        const questsData = await fetchUserQuests(userIdToFetch);
-        console.log(questsData);
-
-        const currentQuests = questsData.filter(quest => quest.status === 'active');
-        const pastQuests = questsData.filter(quest => quest.status === 'completed' || quest.status === 'dropped');
-
-        setUserQuests({
-          current: currentQuests || [],
-          past: pastQuests || [],
-        });
-
-      } catch (error) {
-        console.error('Failed to load user data:', error);
-        setUserQuests({ current: [], past: [] });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     getUserData();
+    getFriendsData();
+
   }, [userIdToFetch, currentUserId]);
 
   useEffect(() => {
     if (modalVisible) {
-      const fetchFriends = async () => {
-        try {
-          const friends = await fetchUserFriends(userIdToFetch);
-          setFriendsList(friends);
-        } catch (error) {
-          console.error('Failed to fetch friends list:', error);
-        }
-      };
-
-      fetchFriends();
+      getFriendsData();
     }
   }, [modalVisible, userIdToFetch]);
 
@@ -142,11 +144,16 @@ const ProfileScreen = ({ route, navigation }) => {
   const renderFriendshipButton = () => {
     if (isCurrentUser) {
       return (
-        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Search')}>
-          <Text style={styles.addButtonText}>
-            <Icon name="user-plus" size={16} color="#000000" /> Find Friends
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('Search')}>
+            <Text style={styles.addButtonText}>
+              <Icon name="user-plus" size={16} color="#000000" /> Find Friends
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton}>
+            <Icon name="cog" size={16} color="#000000" />
+          </TouchableOpacity>
+        </View>
       );
     }
 
@@ -223,7 +230,6 @@ const ProfileScreen = ({ route, navigation }) => {
             <Image source={{ uri: avatarUrl }} style={styles.avatar} />
             <Text style={styles.fullName}>{userProfile.fullname}</Text>
             <Text style={styles.login}>{userProfile.username}</Text>
-            {isCurrentUser && <Text style={styles.currentUserText}>Current User</Text>}
           </View>
 
           {renderFriendshipButton()}
@@ -288,7 +294,6 @@ const ProfileScreen = ({ route, navigation }) => {
       <Footer />
 
       <Modal
-        animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
@@ -296,34 +301,39 @@ const ProfileScreen = ({ route, navigation }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Friends</Text>
-            <FlatList
-              data={friendsList}
-              keyExtractor={(item) => item.user_id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.friendItem}
-                  onPress={() => {
-                    setModalVisible(false);
-                    navigation.navigate('Profile', { userId: item.user_id });
-                  }}
-                >
-                  <Image
-                    source={{ uri: getAvatarUrl(item.avatar_id) }}
-                    style={styles.friendAvatar}
-                  />
-                  <View style={styles.friendInfo}>
-                    <Text style={styles.friendName}>{item.fullname}</Text>
-                    <Text style={styles.friendLogin}>{item.username}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
+            {friendsList.length === 0 ? (
+              <Text style={styles.noFriendsText}>No active friends found.</Text>
+            ) : (
+              <FlatList
+                data={friendsList}
+                keyExtractor={(item) => item.user_id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.friendItem}
+                    onPress={() => {
+                      setModalVisible(false);
+                      navigation.navigate('Profile', { userId: item.user_id });
+                    }}
+                  >
+                    <Image
+                      source={{ uri: getAvatarUrl(item.avatar_id) }}
+                      style={styles.friendAvatar}
+                    />
+                    <View style={styles.friendInfo}>
+                      <Text style={styles.friendName}>{item.fullname}</Text>
+                      <Text style={styles.friendLogin}>{item.username}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
     </SafeAreaView>
   );
 };
@@ -348,7 +358,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   avatar: {
     width: 150,
@@ -356,7 +366,7 @@ const styles = StyleSheet.create({
     borderRadius: 75,
     marginBottom: 10,
     borderWidth: 2,
-    borderColor: '#000', // Add border for modern look
+    borderColor: '#000',
   },
   fullName: {
     fontSize: 24,
@@ -374,6 +384,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 5,
   },
+  buttonContainer: {
+    width: '80%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -381,13 +398,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
-    paddingHorizontal: 40,
-    marginBottom: 10,
     backgroundColor: '#fff',
-    shadowColor: '#000', // Add shadow for modern effect
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    flex: 4,
+    marginHorizontal: 5,
+    justifyContent: 'center',
     elevation: 3,
   },
   addButtonText: {
@@ -395,6 +409,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    flex: 1,
+    marginHorizontal: 5,
+    justifyContent: 'center',
+    elevation: 3,
   },
   followButton: {
     flexDirection: 'row',
@@ -407,7 +434,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     marginBottom: 10,
     backgroundColor: '#fff',
-    shadowColor: '#000', // Add shadow for modern effect
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
@@ -420,15 +447,15 @@ const styles = StyleSheet.create({
   },
   section: {
     width: '100%',
-    marginBottom: 20,
+    marginVertical: 20,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 15,
-    textAlign: 'left',
+    textAlign: 'center',
     width: '100%',
-    color: '#000', // Black text for modern look
+    color: '#000',
   },
   questsSection: {
     alignItems: 'flex-start',
@@ -464,7 +491,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',
-    shadowColor: '#000', // Add shadow for modern effect
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
@@ -497,7 +524,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker background for sleek effect
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalContent: {
     width: '90%',
@@ -506,7 +533,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     maxHeight: '80%',
-    shadowColor: '#000', // Add shadow for modern effect
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -525,7 +552,7 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
-    width: '100%', // Make sure the item takes up the full width
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -535,13 +562,13 @@ const styles = StyleSheet.create({
   friendInfo: {
     flexDirection: 'column',
     justifyContent: 'center',
-    width: '100%', // Ensure the info section also takes up full width
+    width: '100%',
   },
   friendAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 15, // Add space between the avatar and the text
+    marginRight: 15,
   },
   friendName: {
     fontSize: 18,
@@ -632,6 +659,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  noFriendsText: {
+    fontSize: 16,
+    color: '#999999',
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+
 });
 
 export default ProfileScreen;

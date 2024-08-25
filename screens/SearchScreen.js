@@ -47,24 +47,27 @@ const SearchScreen = () => {
         <SafeAreaView style={styles.safeArea}>
             <Header />
             <View style={styles.container}>
-                <TextInput
-                    style={styles.searchBar}
-                    placeholder="Search by full name, email or username"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onSubmitEditing={handleSearch}
-                    autoCapitalize="none"
-                />
-                <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-                    <Text style={styles.searchButtonText}>Search</Text>
-                </TouchableOpacity>
+                <Text style={styles.headerText}>Find Friends</Text>
+                <View style={styles.searchContainer}>
+                    <TextInput
+                        style={styles.searchBar}
+                        placeholder="Search by full name, email or username"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        onSubmitEditing={handleSearch}
+                        autoCapitalize="none"
+                    />
+                    <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+                        <Text style={styles.searchButtonText}>Search</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#0000ff" />
                 ) : error ? (
                     <Text style={styles.errorText}>{error}</Text>
                 ) : searchResults.length === 0 && searchQuery !== '' ? (
-                    <Text style={styles.notFoundText}>Not found, try again</Text>
+                    <Text style={styles.notFoundText}>Not users found, try again</Text>
                 ) : (
                     <FlatList
                         data={searchResults}
@@ -89,32 +92,46 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 20,
     },
+    headerText: {
+        fontSize: 20,
+        textAlign: 'center',
+        marginBottom: 20,
+        color: '#000000',
+        fontWeight: 'bold',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
     searchBar: {
+        flex: 1,
         height: 40,
         borderColor: '#CCCCCC',
         borderWidth: 1,
         borderRadius: 5,
         paddingHorizontal: 10,
-        marginBottom: 10,
     },
     searchButton: {
-        backgroundColor: '#444444',
+        marginLeft: 10,
         paddingVertical: 10,
+        paddingHorizontal: 20,
+        backgroundColor: '#333',
         borderRadius: 5,
-        alignItems: 'center',
     },
     searchButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: '#fff',
+        fontSize: 14,
         fontWeight: 'bold',
     },
     searchResultsContainer: {
-        paddingVertical: 20,
+        paddingVertical: 10,
     },
     userItem: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 15,
+        paddingHorizontal: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#EEEEEE',
     },
@@ -122,7 +139,7 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        marginRight: 10,
+        marginRight: 15,
     },
     userInfo: {
         flex: 1,
@@ -143,13 +160,13 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
         fontSize: 16,
-        color: '#FF0000',
+        color: '#000000',
     },
     errorText: {
         textAlign: 'center',
         marginTop: 20,
         fontSize: 16,
-        color: '#FF0000',
+        color: '#000000',
     },
 });
 

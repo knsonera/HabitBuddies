@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, Modal, Dimensions, TextInput } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
-import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant } from '../services/apiService';
+import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite } from '../services/apiService';
 import iconsData from '../assets/icons';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -17,10 +17,31 @@ const QuestScreen = ({ route }) => {
   const { questDetails } = route.params;
   const navigation = useNavigation();
 
-  const { userId: currentUserId, authToken } = useContext(AuthContext);
+  const { authToken } = useContext(AuthContext);
+  const { userId: currentUserId } = useContext(AuthContext);
+
+  useEffect(() => {
+    const verifyUserId = async () => {
+      const id = await getUserId();
+      console.log('Retrieved user ID:', id);
+      if (!id) {
+        console.error('User ID could not be retrieved.');
+        Alert.alert('Error', 'User ID could not be retrieved.');
+        return; // Stop further actions if user ID is missing
+      }
+      // Proceed with actions that depend on userId
+    };
+    verifyUserId();
+  }, []);
 
   const [participants, setParticipants] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [confirmationVisible, setConfirmationVisible] = useState(false); // State for confirmation modal
+  const [inviteModalVisible, setInviteModalVisible] = useState(false); // State for Invite Friends modal
+  const [friends, setFriends] = useState([]); // State for friends list
+  const [filteredFriends, setFilteredFriends] = useState([]); // State for filtered friends list
+  const [searchQuery, setSearchQuery] = useState(''); // State for search input
+
   const [category, setCategory] = useState('');
   const [progress, setProgress] = useState(0);
   const [userRole, setUserRole] = useState(null);
@@ -86,7 +107,7 @@ const QuestScreen = ({ route }) => {
         const currentUser = questParticipants.find(p => p.user_id === currentUserId);
         if (currentUser) {
           setUserRole(currentUser.role);
-          setUserStatus(currentUser.status); // Set the user status
+          setUserStatus(currentUser.user_status); // Set the user status
 
         } else {
           setUserRole(null); // User has no role
@@ -121,7 +142,7 @@ const QuestScreen = ({ route }) => {
           // Sort participants by role first, then by status
           const sortedParticipants = questParticipants.sort((a, b) => {
               if (a.role === b.role) {
-                  return a.status.localeCompare(b.status);
+                  return a.user_status.localeCompare(b.user_status);
               }
               return a.role.localeCompare(b.role);
           });
@@ -142,7 +163,11 @@ const QuestScreen = ({ route }) => {
     navigation.navigate('Chat', { questId });
   };
 
-  const handleEndPress = async () => {
+  const handleEndPress = () => {
+    setConfirmationVisible(true); // Show confirmation modal
+  };
+
+  const confirmEndQuest = async () => {
     try {
       await endQuest(questDetails.quest_id);
       Alert.alert('Success', 'Quest has been ended.');
@@ -150,17 +175,28 @@ const QuestScreen = ({ route }) => {
     } catch (error) {
       console.error('Failed to end the quest:', error);
       Alert.alert('Error', 'Failed to end the quest.');
+    } finally {
+      setConfirmationVisible(false); // Hide confirmation modal
     }
   };
 
   const handleRequestToJoin = async () => {
+    console.log('Requesting to join quest with ID:', questDetails.quest_id);
+    console.log('Current user ID:', currentUserId);
+
+    if (!questDetails.quest_id || !currentUserId) {
+        console.error('Missing required data: questId or userId');
+        Alert.alert('Error', 'Missing required data.');
+        return;
+    }
+
     try {
-      await requestToJoinQuest(questDetails.quest_id, authToken);
-      Alert.alert('Success', 'Request to join the quest has been sent.');
-      setUserStatus('pending'); // Set the status to 'pending' after request is sent
+        await requestToJoinQuest(questDetails.quest_id, authToken);
+        Alert.alert('Success', 'Request to join the quest has been sent.');
+        setUserStatus('pending'); // Set the status to 'pending' after request is sent
     } catch (error) {
-      console.error('Failed to send request to join:', error);
-      Alert.alert('Error', 'Failed to send request to join.');
+        console.error('Failed to send request to join:', error);
+        Alert.alert('Error', 'Failed to send request to join.');
     }
   };
 
@@ -187,6 +223,52 @@ const QuestScreen = ({ route }) => {
     } catch (error) {
       console.error('Failed to remove participant:', error);
       Alert.alert('Error', 'Failed to remove participant.');
+    }
+  };
+
+  const handleInvitePress = async () => {
+    try {
+      const friendsList = await fetchUserFriends(currentUserId);
+      setFriends(friendsList);
+      setFilteredFriends(friendsList); // Initially, the filtered list is the same as the full list
+      setInviteModalVisible(true);
+    } catch (error) {
+      console.error('Failed to load friends list:', error);
+      Alert.alert('Error', 'Failed to load friends list.');
+    }
+  };
+
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setFilteredFriends(friends);
+    } else {
+      const filtered = friends.filter(friend =>
+        friend.fullname.toLowerCase().includes(query.toLowerCase()) ||
+        friend.username.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredFriends(filtered);
+    }
+  };
+
+  const handleInviteFriend = async (friendId) => {
+    console.log('Inviting friend with ID:', friendId);
+    console.log('Current quest ID:', questDetails.quest_id);
+    console.log('Current user ID:', currentUserId);
+
+    if (!friendId || !questDetails.quest_id || !currentUserId) {
+      console.error('Missing required data: friendId, questId, or currentUserId');
+      Alert.alert('Error', 'Missing required data.');
+      return;
+    }
+
+    try {
+      await inviteFriendToQuest(questDetails.quest_id, friendId, currentUserId);
+      Alert.alert('Success', `Invite sent to ${friendId}`);
+      setInviteModalVisible(false); // Close the modal after inviting
+    } catch (error) {
+      console.error('Failed to invite friend:', error);
+      Alert.alert('Error', 'Failed to invite friend.');
     }
   };
 
@@ -220,6 +302,23 @@ const QuestScreen = ({ route }) => {
               </>
             ) : userStatus === 'pending' ? (
               <Text style={styles.pendingText}>Request Sent</Text>
+            ) : userStatus === 'invited' ? (
+              <View style={styles.inviteActions}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleAcceptInvite(quest.quest_id)}
+                >
+                  <MaterialCommunityIcons name="plus" size={20} color="#000" />
+                  <Text style={styles.buttonText}>Accept</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleDeclineInvite(quest.quest_id)}
+                >
+                  <MaterialCommunityIcons name="close" size={20} color="#000" />
+                  <Text style={styles.buttonText}>Decline</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <TouchableOpacity style={styles.button} onPress={handleRequestToJoin}>
                 <Text style={styles.buttonText}>Request to Join</Text>
@@ -259,6 +358,10 @@ const QuestScreen = ({ route }) => {
             )}
             {userRole === 'owner' && (
               <>
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleInvitePress(questDetails)}>
+                  <Icon name="user-plus" size={20} color="#000" />
+                  <Text style={styles.buttonText}>Invite Friends</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => handleEditPress(questDetails)}>
                   <Icon name="edit" size={20} color="#000" />
                   <Text style={styles.buttonText}>Edit Quest</Text>
@@ -293,7 +396,7 @@ const QuestScreen = ({ route }) => {
                     {participant.fullname} ({participant.username})
                   </Text>
                   <View style={styles.participantActions}>
-                    {userRole === 'owner' && participant.status === 'pending' && (
+                    {userRole === 'owner' && participant.user_status === 'pending' && (
                       <>
                         <TouchableOpacity
                           style={styles.approveButton}
@@ -309,7 +412,7 @@ const QuestScreen = ({ route }) => {
                         </TouchableOpacity>
                       </>
                     )}
-                    {userRole === 'owner' && participant.status === 'active' && participant.role === 'participant' && (
+                    {userRole === 'owner' && participant.user_status === 'active' && participant.role === 'participant' && (
                       <TouchableOpacity
                         style={styles.removeButton}
                         onPress={() => handleRemove(questDetails.quest_id, participant.user_id)}
@@ -324,6 +427,71 @@ const QuestScreen = ({ route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Invite Friends Modal */}
+      <Modal
+        transparent={true}
+        visible={inviteModalVisible}
+        onRequestClose={() => setInviteModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setInviteModalVisible(false)}>
+              <Icon name="close" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Invite Friends</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search friends..."
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+            />
+            <ScrollView style={styles.participantsList}>
+              {filteredFriends.map((friend, index) => (
+                <View key={index} style={styles.participantItem}>
+                  <Text style={styles.participantText}>
+                    {friend.fullname} ({friend.username})
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.inviteButton}
+                    onPress={() => handleInviteFriend(friend.user_id)}
+                  >
+                    <MaterialCommunityIcons name="plus-circle" size={20} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal
+        transparent={true}
+        visible={confirmationVisible}
+        onRequestClose={() => setConfirmationVisible(false)}
+      >
+        <View style={styles.confirmationModalContainer}>
+          <View style={styles.confirmationModalContent}>
+            <Text style={styles.confirmationText}>Are you sure you want to end this quest?</Text>
+            <View style={styles.confirmationButtonsContainer}>
+              <TouchableOpacity
+                style={styles.confirmationButton}
+                onPress={confirmEndQuest}
+              >
+                <Text style={styles.buttonText}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmationButton, styles.cancelButton]}
+                onPress={() => setConfirmationVisible(false)}
+              >
+                <Text style={styles.buttonText}>No</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -407,7 +575,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   actionButtonContainer: {
-    width: '80%',
+    width: '100%',
     alignItems: 'center',
     flexDirection: 'row', // Align buttons in a row
     flexWrap: 'wrap', // Allow buttons to wrap to the next line if necessary
@@ -418,7 +586,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
@@ -503,9 +671,61 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#999999',
     borderRadius: 10,
-    backgroundColor: '#f0f0f0',
     alignSelf: 'center', // Ensure the text is centered within its parent
     marginVertical: 10, // Margin for spacing
+  },
+  confirmationModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  confirmationModalContent: {
+    width: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  confirmationText: {
+    fontSize: 18,
+    color: '#000',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  confirmationButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  confirmationButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
+    marginHorizontal: 5, // Add spacing between buttons
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#ff5c5c',
+  },
+  inviteActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  acceptButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 5,
+    marginRight: 10, // Add space between buttons
+  },
+  declineButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 5,
   },
 });
 
