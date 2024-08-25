@@ -1,46 +1,61 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { fetchMessages, sendMessage } from '../services/apiService';
-import Header from '../components/Header'; // Import Header component
+import Header from '../components/Header'; 
 
 const ChatScreen = ({ route }) => {
-    const { questId } = route.params;
+    const { questId, questName } = route.params;
     const { authToken, userId } = useContext(AuthContext);
-    const [messages, setMessages] = useState([{
-        message_id: 0,
-        username: 'System',
-        message_text: 'Welcome to the chat! Feel free to share your thoughts and ideas here.',
-        sent_at: new Date().toISOString(),
-    }]);
+    const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [ws, setWs] = useState(null);
+    const flatListRef = useRef(null);
+
+    const loadMessages = async () => {
+        try {
+            const fetchedMessages = await fetchMessages(questId, authToken);
+            setMessages(fetchedMessages);
+        } catch (error) {
+            console.error('Failed to load messages:', error);
+        }
+    };
 
     useEffect(() => {
-        const loadMessages = async () => {
-            try {
-                const fetchedMessages = await fetchMessages(questId, authToken);
-                setMessages(prevMessages => [...prevMessages, ...fetchedMessages]);
-            } catch (error) {
-                console.error('Failed to load messages:', error);
-            }
-        };
-
-        loadMessages();
-
-        const socket = new WebSocket('ws://localhost:8080'); // Make sure this URL is correct
+        const socket = new WebSocket('ws://localhost:8080');
         socket.onopen = () => console.log('WebSocket connected');
         socket.onmessage = event => {
             console.log('Received WebSocket message:', event.data); // Log received messages
             const message = JSON.parse(event.data);
             if (message.questId === questId) {
-                setMessages(prevMessages => [...prevMessages, message]);
+                setMessages(prevMessages => {
+                    const updatedMessages = [...prevMessages, message];
+                    if (updatedMessages.length > 0) {
+                        flatListRef.current.scrollToEnd({ animated: true }); // Scroll to the bottom when a new message is received
+                    }
+                    return updatedMessages;
+                });
             }
         };
+        socket.onerror = error => console.error('WebSocket error:', error);
         setWs(socket);
 
-        return () => socket.close();
+        return () => {
+            socket.close();
+        };
     }, [questId, authToken]);
+
+    useFocusEffect(
+      React.useCallback(() => {
+        loadMessages();
+        setTimeout(() => {
+          if(messages.length > 0) {
+            flatListRef.current.scrollToEnd({ animated: false }); // Scroll to the bottom after loading messages
+          }
+        }, 100); // Timeout to ensure messages are loaded
+      }, [userId])
+    );
 
     const handleSend = async () => {
         if (newMessage.trim() === '') return;
@@ -56,9 +71,21 @@ const ChatScreen = ({ route }) => {
             await sendMessage(questId, message, authToken);
             ws.send(JSON.stringify(message));
             setNewMessage('');
+
+            loadMessages();
+            setTimeout(() => {
+              if(messages.length > 0) {
+                flatListRef.current.scrollToEnd({ animated: true }); // Scroll to the bottom after loading messages
+              }
+            }, 100);
         } catch (error) {
             console.error('Failed to send message:', error);
         }
+    };
+
+    const handleEnterPress = () => {
+        handleSend();
+        Keyboard.dismiss();
     };
 
     const renderItem = ({ item }) => (
@@ -72,21 +99,41 @@ const ChatScreen = ({ route }) => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <Header />
-            <Text style={styles.title}>Chat</Text>
-            <FlatList
-                data={messages}
-                renderItem={renderItem}
-                keyExtractor={item => item.message_id.toString()}
-                contentContainerStyle={styles.scrollViewContent}
-            />
+            <Text style={styles.title}>{questName} Chat</Text>
+
+            {messages.length === 0 ? (
+                <View style={styles.noMessagesContainer}>
+                    <Text style={styles.noMessagesText}>No messages yet</Text>
+                </View>
+            ) : (
+                <FlatList
+                    ref={flatListRef}
+                    data={messages}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.message_id.toString()}
+                    contentContainerStyle={styles.scrollViewContent}
+                    initialNumToRender={10} // Render only 10 items initially
+                    onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })} // Scroll to the bottom on content change
+                />
+            )}
+
             <View style={styles.newMessageContainer}>
                 <TextInput
                     style={styles.newMessageInput}
                     value={newMessage}
                     onChangeText={setNewMessage}
                     placeholder="Type your message..."
+                    accessible={true}
+                    accessibilityLabel="Message Input"
+                    onSubmitEditing={handleEnterPress} // Handle Enter key press
+                    blurOnSubmit={false} // Prevent TextInput from losing focus after pressing Enter
                 />
-                <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={handleSend}
+                    accessible={true}
+                    accessibilityLabel="Send Message Button"
+                >
                     <Text style={styles.sendButtonText}>Send</Text>
                 </TouchableOpacity>
             </View>
@@ -97,30 +144,25 @@ const ChatScreen = ({ route }) => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF', // White background
+        width: '100%',
+        backgroundColor: '#FFFFFF',
     },
     scrollViewContent: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: '100%',
         paddingTop: 10,
-    },
-    container: {
-        flex: 1,
-        padding: 10,
-        backgroundColor: '#FFF',
+        marginLeft: 20,
     },
     title: {
-        fontSize: 24,
+        fontSize: 20,
         textAlign: 'center',
-        marginVertical: 10,
+        marginVertical: 20,
         fontWeight: 'bold',
     },
     messageItem: {
+        width: '100%',
         padding: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#EEE',
-        width: '100%',
     },
     messageText: {
         fontSize: 16,
@@ -131,6 +173,15 @@ const styles = StyleSheet.create({
     messageTime: {
         fontSize: 12,
         color: '#999',
+    },
+    noMessagesContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noMessagesText: {
+        fontSize: 18,
+        color: '#888',
     },
     newMessageContainer: {
         flexDirection: 'row',

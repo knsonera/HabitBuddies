@@ -160,8 +160,8 @@ const QuestScreen = ({ route }) => {
     navigation.navigate('EditQuest', { questDetails: quest });
   };
 
-  const handleChatPress = (questId) => {
-    navigation.navigate('Chat', { questId });
+  const handleChatPress = (questId, questName) => {
+    navigation.navigate('Chat', { questId, questName });
   };
 
   const handleVideoPress = (zoom_link) => {
@@ -342,7 +342,7 @@ const QuestScreen = ({ route }) => {
                     <Text style={styles.buttonText}>Check in</Text>
                   )}
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id)}>
+                <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id, questDetails.quest_name)}>
                   <MaterialCommunityIcons name="chat" size={20} color="#000" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={() => handleVideoPress(questDetails.zoom_link)}>
@@ -377,7 +377,7 @@ const QuestScreen = ({ route }) => {
 
           {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
-            <Text style={styles.detailsText}>Current Progress</Text>
+            <Text style={styles.detailsText}>Quest Timeline</Text>
             <ProgressBar
               progress={progress / 100}
               width={width * 0.9}
