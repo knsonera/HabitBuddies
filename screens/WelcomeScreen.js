@@ -17,6 +17,7 @@ const WelcomeScreen = () => {
   const navigation = useNavigation();
 
   const handleLogin = async () => {
+    console.log('handling login on welcome screen');
     try {
       await logInUser(email, password);
       console.log('Login successful, navigating to Home');
@@ -29,6 +30,7 @@ const WelcomeScreen = () => {
   };
 
   const handleSignUp = async () => {
+    console.log('handling sign up on welcome screen');
     if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match.');
       return;

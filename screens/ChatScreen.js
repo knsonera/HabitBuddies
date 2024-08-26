@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { fetchMessages, sendMessage } from '../services/apiService';
-import Header from '../components/Header'; 
+import Header from '../components/Header';
 
 const ChatScreen = ({ route }) => {
     const { questId, questName } = route.params;
@@ -98,6 +98,11 @@ const ChatScreen = ({ route }) => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoidingView}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0} // Adjust according to your app's layout
+          >
             <Header />
             <Text style={styles.title}>{questName} Chat</Text>
 
@@ -137,6 +142,7 @@ const ChatScreen = ({ route }) => {
                     <Text style={styles.sendButtonText}>Send</Text>
                 </TouchableOpacity>
             </View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -146,6 +152,9 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         backgroundColor: '#FFFFFF',
+    },
+    keyboardAvoidingView: {
+      flex: 1,
     },
     scrollViewContent: {
         width: '100%',

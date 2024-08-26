@@ -1,24 +1,31 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { makeRequest } from './requestService';
 
-let authToken = '';
-let userId = '';
-let refreshToken = '';
+let authToken = null;
+let refreshToken = null;
+let userId = null;
+
+const BASE_URL = 'https://www.uzhvieva.com:443';
 
 export const setAuthToken = async (token, refresh, user) => {
     authToken = token;
     refreshToken = refresh;
-    userId = user; // Ensure userId is set here
-    await AsyncStorage.setItem('authToken', token);
-    await AsyncStorage.setItem('refreshToken', refresh);
-    await AsyncStorage.setItem('userId', JSON.stringify({ userId })); // Correctly store the userId
-    console.log('Tokens set:', { userId, authToken, refreshToken });
+    userId = user;
+    try {
+        await AsyncStorage.setItem('authToken', token);
+        await AsyncStorage.setItem('refreshToken', refresh);
+        await AsyncStorage.setItem('userId', user.toString());
+        console.log('Tokens set:', { userId, authToken, refreshToken });
+    } catch (error) {
+        console.error('Failed to set tokens:', error);
+    }
 };
 
 export const getAuthToken = async () => {
     if (!authToken) {
         authToken = await AsyncStorage.getItem('authToken');
     }
-    console.log('get auth token: ', authToken);
+    console.log('get auth token:', authToken);
     return authToken;
 };
 
@@ -26,40 +33,61 @@ export const getRefreshToken = async () => {
     if (!refreshToken) {
         refreshToken = await AsyncStorage.getItem('refreshToken');
     }
-    console.log('get refresh token: ', refreshToken);
+    console.log('get refresh token:', refreshToken);
     return refreshToken;
 };
 
 export const clearAuthToken = async () => {
-    authToken = '';
-    refreshToken = '';
-    userId = '';
-    await AsyncStorage.removeItem('authToken');
-    await AsyncStorage.removeItem('refreshToken');
-    await AsyncStorage.removeItem('userId');
-    console.log('clear token');
+    authToken = null;
+    refreshToken = null;
+    userId = null;
+    try {
+        await AsyncStorage.removeItem('authToken');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('userId');
+        console.log('Tokens cleared');
+    } catch (error) {
+        console.error('Failed to clear tokens:', error);
+    }
 };
 
 export const getUserId = async () => {
-    try {
-        const userIdString = await AsyncStorage.getItem('userId');
-        console.log('AsyncStorage returned userIdString:', userIdString);
-
-        if (userIdString) {
-            const parsedData = JSON.parse(userIdString);
-            if (parsedData && parsedData.userId) {
-                console.log('Parsed userId:', parsedData.userId);
-                return parsedData.userId;
+    if (!userId) {
+        try {
+            userId = await AsyncStorage.getItem('userId');
+            if (userId) {
+                console.log('Parsed userId:', userId);
+                return parseInt(userId, 10);  // Return as an integer
             } else {
-                console.error('Parsed data does not contain userId');
+                console.log('No userId found in AsyncStorage');
                 return null;
             }
-        } else {
-            console.log('No userId found in AsyncStorage');
+        } catch (error) {
+            console.error('Error retrieving userId from AsyncStorage:', error);
             return null;
         }
+    }
+    return userId;
+};
+
+export const refreshAuthToken = async () => {
+    console.log('auth service: refreshAuthToken');
+    try {
+        const refreshToken = await getRefreshToken();
+        console.log('refresh token from authService:', refreshToken);
+        if (!refreshToken) {
+            throw new Error('Refresh token is required');
+        }
+
+        const response = await makeRequest('/auth/refresh-token', 'POST', { refreshToken });
+        console.log('POST /auth/refresh-token:', response);
+        const data = await response.json();
+
+        await setAuthToken(data.token, data.refreshToken, data.userId);
+        return data;
     } catch (error) {
-        console.error('Error retrieving userId from AsyncStorage:', error);
-        return null;
+        console.error('Failed to refresh auth token:', error);
+        await clearAuthToken();
+        return null;  // Clear tokens and return null if refresh fails
     }
 };

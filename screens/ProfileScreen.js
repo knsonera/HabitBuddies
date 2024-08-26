@@ -224,52 +224,50 @@ const ProfileScreen = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.contentContainer}>
-          <View style={styles.topSection}>
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-            <Text style={styles.fullName}>{userProfile.fullname}</Text>
-            <Text style={styles.login}>{userProfile.username}</Text>
-          </View>
-
-          {renderFriendshipButton()}
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Summary</Text>
-            <View style={styles.summarySection}>
-              <View style={styles.summaryItem}>
-                <MaterialCommunityIcons name="trophy" size={24} color="#000000" />
-                <Text style={styles.summaryTitle}>Quests</Text>
-                <Text style={styles.summaryValue}>{userQuests.current.length}</Text>
-              </View>
-              <TouchableOpacity style={styles.summaryItem} onPress={() => setModalVisible(true)}>
-                <Icon name="users" size={24} color="#000000" />
-                <Text style={styles.summaryTitle}>Friends</Text>
-                <Text style={styles.summaryValue}>{friendsList.length}</Text>
-              </TouchableOpacity>
+      <FlatList
+        data={userQuests.current}
+        keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.questItem}
+            onPress={() => navigation.navigate('Quest', { questDetails: item })}
+          >
+            <View style={styles.questInfo}>
+              <Text style={styles.questTitle}>{item.quest_name}</Text>
             </View>
-          </View>
-          <View style={styles.section}>
+          </TouchableOpacity>
+        )}
+
+        ListHeaderComponent={() => (
+          <View>
+            <View style={styles.topSection}>
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+              <Text style={styles.fullName}>{userProfile.fullname}</Text>
+              <Text style={styles.login}>{userProfile.username}</Text>
+
+              {renderFriendshipButton()}
+
+            </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Summary</Text>
+              <View style={styles.summarySection}>
+                <View style={styles.summaryItem}>
+                  <MaterialCommunityIcons name="trophy" size={24} color="#000000" />
+                  <Text style={styles.summaryTitle}>Quests</Text>
+                  <Text style={styles.summaryValue}>{userQuests.current.length}</Text>
+                </View>
+                <TouchableOpacity style={styles.summaryItem} onPress={() => setModalVisible(true)}>
+                  <Icon name="users" size={24} color="#000000" />
+                  <Text style={styles.summaryTitle}>Friends</Text>
+                  <Text style={styles.summaryValue}>{friendsList.length}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             <Text style={styles.sectionTitle}>Current Quests</Text>
-            {userQuests.current.length === 0 ? (
-              <Text style={styles.noQuestsText}>No current quests</Text>
-            ) : (
-              <FlatList
-                data={userQuests.current}
-                keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.questItem}
-                    onPress={() => navigation.navigate('Quest', { questDetails: item })}
-                  >
-                    <View style={styles.questInfo}>
-                      <Text style={styles.questTitle}>{item.quest_name}</Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
           </View>
+        )}
+
+        ListFooterComponent={() => (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Past Quests</Text>
             {userQuests.past.length === 0 ? (
@@ -289,8 +287,8 @@ const ProfileScreen = ({ route, navigation }) => {
               />
             )}
           </View>
-        </View>
-      </ScrollView>
+        )}
+      />
       <Footer />
 
       <Modal
@@ -353,12 +351,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    width: '100%',
+    width: '90%',
     paddingHorizontal: 10,
   },
   topSection: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginVertical: 10,
   },
   avatar: {
     width: 150,
@@ -377,6 +375,7 @@ const styles = StyleSheet.create({
   login: {
     fontSize: 16,
     color: '#888888',
+    marginBottom: 10,
   },
   currentUserText: {
     fontSize: 16,
@@ -451,7 +450,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginVertical: 10,
     textAlign: 'center',
     width: '100%',
     color: '#000',
@@ -463,11 +462,12 @@ const styles = StyleSheet.create({
   questItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 5,
+    marginHorizontal: 20,
     padding: 15,
     backgroundColor: '#fff',
     borderRadius: 10,
-    width: '100%',
+    width: '90%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -477,11 +477,14 @@ const styles = StyleSheet.create({
   questText: {
     fontSize: 18,
     color: '#000',
+    marginHorizontal: 20,
   },
   summarySection: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    alignSelf: 'center',
+    width: '90%'
   },
   summaryItem: {
     width: '48%',
@@ -503,15 +506,6 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 20,
     color: '#000000',
-  },
-  achievementsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  badge: {
-    width: 50,
-    height: 50,
   },
   loadingContainer: {
     flex: 1,
@@ -633,29 +627,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999999',
     textAlign: 'left',
-  },
-  questItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  questInfo: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  questTitle: {
-    fontSize: 16,
-    color: '#333',
+    marginHorizontal: 20,
   },
   noFriendsText: {
     fontSize: 16,
@@ -663,7 +635,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
   },
-
 });
+
 
 export default ProfileScreen;

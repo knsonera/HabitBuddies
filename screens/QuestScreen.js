@@ -111,7 +111,8 @@ const QuestScreen = ({ route }) => {
         setCheckIns(questCheckIns);
 
         const isCheckedIn = await fetchUserCheckInsForQuestToday(questDetails.quest_id, currentUserId);
-        setCheckedIn(isCheckedIn);
+        console.log("is checked in? ", isCheckedIn.length);
+        setCheckedIn(isCheckedIn.length > 0);
 
         const currentUser = questParticipants.find(p => p.user_id === currentUserId);
         if (currentUser) {
