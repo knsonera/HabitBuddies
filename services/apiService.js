@@ -1,7 +1,8 @@
 import { getAuthToken, setAuthToken, clearAuthToken, getRefreshToken, getUserId, refreshAuthToken } from './authService';
 import { makeRequest } from './requestService';
 
-const BASE_URL = 'https://www.uzhvieva.com:443';
+//const BASE_URL = 'https://www.uzhvieva.com:443';
+const BASE_URL = 'http://localhost:3000';
 
 // Function to handle unauthenticated requests
 export const requestWithoutAuth = async (endpoint, method = 'POST', body = null) => {
@@ -332,4 +333,29 @@ export const fetchUserCheckInsToday = async (userId) => {
         throw new Error('User ID is required');
     }
     return requestWithAuth(`/users/${userId}/checkins/today`, 'GET');
+};
+
+export const fetchQuestsFeed = async () => {
+    return requestWithAuth('/feeds/quests', 'GET');
+};
+
+export const fetchCheckinsFeed = async () => {
+    return requestWithAuth('/feeds/checkins', 'GET');
+};
+
+export const sendPowerUp = async (receiverId, eventType, eventId, message) => {
+    if (!receiverId || !eventType || !eventId || !message) {
+        throw new Error('All parameters are required to send a power-up');
+    }
+
+    return requestWithAuth('/powerups', 'POST', {
+        receiver_id: receiverId,
+        event_type: eventType, // 'UserQuest' or 'CheckIn'
+        event_id: eventId,
+        message,
+    });
+};
+
+export const fetchPowerUps = async () => {
+    return requestWithAuth('/powerups/unread', 'GET');
 };

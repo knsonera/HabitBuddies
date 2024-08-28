@@ -23,38 +23,71 @@ const ChatScreen = ({ route }) => {
     };
 
     useEffect(() => {
-        const socket = new WebSocket('ws://localhost:8080');
-        socket.onopen = () => console.log('WebSocket connected');
-        socket.onmessage = event => {
-            console.log('Received WebSocket message:', event.data); // Log received messages
-            const message = JSON.parse(event.data);
-            if (message.questId === questId) {
-                setMessages(prevMessages => {
-                    const updatedMessages = [...prevMessages, message];
-                    if (updatedMessages.length > 0) {
-                        flatListRef.current.scrollToEnd({ animated: true }); // Scroll to the bottom when a new message is received
+        const createWebSocket = () => {
+            //const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
+            const socket = new WebSocket(`ws://localhost:3000`, authToken);
+
+            socket.onopen = () => console.log('WebSocket connected');
+
+            socket.onmessage = event => {
+                console.log('Received WebSocket message:', event.data);
+
+                // Check if the incoming data is a non-empty JSON string
+                if (typeof event.data === 'string' && event.data.trim().startsWith('{')) {
+                    let message;
+                    try {
+                        message = JSON.parse(event.data);
+                        console.log('Parsed message:', message); // Log the parsed message to inspect the fields
+                    } catch (error) {
+                        console.error('Failed to parse WebSocket message:', error);
+                        return;
                     }
-                    return updatedMessages;
-                });
-            }
+
+                    // Process the message if it's related to the current quest
+                    if (message.questId === questId) {
+                        setMessages(prevMessages => {
+                            const updatedMessages = [...prevMessages, message];
+                            if (updatedMessages.length > 0) {
+                                flatListRef.current.scrollToEnd({ animated: true });
+                            }
+                            return updatedMessages;
+                        });
+                    }
+                } else if (Array.isArray(event.data) && event.data.length === 0) {
+                    console.log('Received an empty message array');
+                    // Handle empty array messages if necessary
+                } else {
+                    console.log('Non-JSON message received:', event.data);
+                    // Handle non-JSON messages if necessary, otherwise ignore them
+                }
+            };
+
+            socket.onerror = error => console.error('WebSocket error:', error);
+
+            socket.onclose = () => {
+                console.log('WebSocket closed, attempting to reconnect...');
+                setTimeout(createWebSocket, 3000); // Retry connection after 3 seconds
+            };
+
+            setWs(socket);
         };
-        socket.onerror = error => console.error('WebSocket error:', error);
-        setWs(socket);
+
+        createWebSocket();
 
         return () => {
-            socket.close();
+            if (ws) ws.close();
         };
     }, [questId, authToken]);
 
     useFocusEffect(
-      React.useCallback(() => {
-        loadMessages();
-        setTimeout(() => {
-          if(messages.length > 0) {
-            flatListRef.current.scrollToEnd({ animated: false }); // Scroll to the bottom after loading messages
-          }
-        }, 100); // Timeout to ensure messages are loaded
-      }, [userId])
+        React.useCallback(() => {
+            loadMessages();
+            setTimeout(() => {
+                if (messages.length > 0) {
+                    flatListRef.current.scrollToEnd({ animated: false });
+                }
+            }, 100); // Timeout to ensure messages are loaded
+        }, [userId])
     );
 
     const handleSend = async () => {
@@ -68,16 +101,32 @@ const ChatScreen = ({ route }) => {
         };
 
         try {
-            await sendMessage(questId, message, authToken);
-            ws.send(JSON.stringify(message));
-            setNewMessage('');
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                // Send the message via WebSocket
+                ws.send(JSON.stringify(message));
+                // Optimistically update the UI
+                setMessages(prevMessages => [...prevMessages, message]);
+                setNewMessage('');
 
-            loadMessages();
-            setTimeout(() => {
-              if(messages.length > 0) {
-                flatListRef.current.scrollToEnd({ animated: true }); // Scroll to the bottom after loading messages
-              }
-            }, 100);
+                // Scroll to the bottom
+                setTimeout(() => {
+                    if (flatListRef.current && messages.length > 0) {
+                        flatListRef.current.scrollToEnd({ animated: true });
+                    }
+                }, 100);
+            } else {
+                // Fallback to API if WebSocket is not available
+                await sendMessage(questId, message, authToken);
+                setMessages(prevMessages => [...prevMessages, message]);
+                setNewMessage('');
+
+                // Scroll to the bottom
+                setTimeout(() => {
+                    if (flatListRef.current && messages.length > 0) {
+                        flatListRef.current.scrollToEnd({ animated: true });
+                    }
+                }, 100);
+            }
         } catch (error) {
             console.error('Failed to send message:', error);
         }
@@ -98,51 +147,51 @@ const ChatScreen = ({ route }) => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-          <KeyboardAvoidingView
-            style={styles.keyboardAvoidingView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0} // Adjust according to your app's layout
-          >
-            <Header />
-            <Text style={styles.title}>{questName} Chat</Text>
+            <KeyboardAvoidingView
+                style={styles.keyboardAvoidingView}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+            >
+                <Header />
+                <Text style={styles.title}>{questName} Chat</Text>
 
-            {messages.length === 0 ? (
-                <View style={styles.noMessagesContainer}>
-                    <Text style={styles.noMessagesText}>No messages yet</Text>
-                </View>
-            ) : (
-                <FlatList
+                {messages.length === 0 ? (
+                    <View style={styles.noMessagesContainer}>
+                        <Text style={styles.noMessagesText}>No messages yet</Text>
+                    </View>
+                ) : (
+                  <FlatList
                     ref={flatListRef}
                     data={messages}
                     renderItem={renderItem}
-                    keyExtractor={item => item.message_id.toString()}
+                    keyExtractor={(item, index) => item.message_id ? item.message_id.toString() : `key-${index}`}
                     contentContainerStyle={styles.scrollViewContent}
-                    initialNumToRender={10} // Render only 10 items initially
-                    onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })} // Scroll to the bottom on content change
-                />
-            )}
+                    initialNumToRender={10}
+                    onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })}
+                 />
+                )}
 
-            <View style={styles.newMessageContainer}>
-                <TextInput
-                    style={styles.newMessageInput}
-                    value={newMessage}
-                    onChangeText={setNewMessage}
-                    placeholder="Type your message..."
-                    accessible={true}
-                    accessibilityLabel="Message Input"
-                    onSubmitEditing={handleEnterPress} // Handle Enter key press
-                    blurOnSubmit={false} // Prevent TextInput from losing focus after pressing Enter
-                />
-                <TouchableOpacity
-                    style={styles.sendButton}
-                    onPress={handleSend}
-                    accessible={true}
-                    accessibilityLabel="Send Message Button"
-                >
-                    <Text style={styles.sendButtonText}>Send</Text>
-                </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
+                <View style={styles.newMessageContainer}>
+                    <TextInput
+                        style={styles.newMessageInput}
+                        value={newMessage}
+                        onChangeText={setNewMessage}
+                        placeholder="Type your message..."
+                        accessible={true}
+                        accessibilityLabel="Message Input"
+                        onSubmitEditing={handleEnterPress}
+                        blurOnSubmit={false}
+                    />
+                    <TouchableOpacity
+                        style={styles.sendButton}
+                        onPress={handleSend}
+                        accessible={true}
+                        accessibilityLabel="Send Message Button"
+                    >
+                        <Text style={styles.sendButtonText}>Send</Text>
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -154,7 +203,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
     },
     keyboardAvoidingView: {
-      flex: 1,
+        flex: 1,
     },
     scrollViewContent: {
         width: '100%',

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, fetchUserCheckInsToday } from '../services/apiService';
+import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, fetchUserCheckInsToday, fetchPowerUps } from '../services/apiService';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -21,6 +21,8 @@ const HomeScreen = () => {
   const [friends, setFriends] = useState([]);
   const [checkins, setCheckins] = useState([]);
   const [comment, setComment] = useState([]);
+  const [powerUps, setPowerUps] = useState([]);
+  const [hasUnreadPowerUps, setHasUnreadPowerUps] = useState(false); // State to track unread power-ups
 
   const loadUserData = async () => {
     try {
@@ -51,10 +53,22 @@ const HomeScreen = () => {
     }
   };
 
+  const loadPowerUps = async () => {
+    try {
+      const data = await fetchPowerUps();
+      console.log('Unread Power-Ups:', data);
+      setPowerUps(data);
+      setHasUnreadPowerUps(data.length > 0); // Update the state based on unread power-ups
+    } catch (error) {
+      console.error('Failed to fetch power-ups:', error);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       loadUserQuests();
       loadTodayCheckIns();
+      loadPowerUps(); // Load power-ups when the screen is focused
     }, [userId])
   );
 
@@ -251,7 +265,7 @@ const HomeScreen = () => {
         )}
         </View>
       </ScrollView>
-      <Footer />
+      <Footer hasUnreadPowerUps={hasUnreadPowerUps} powerUps={powerUps} />
 
       {selectedQuest && (
         <Modal

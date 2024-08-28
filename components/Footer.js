@@ -4,7 +4,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext'; // Import AuthContext
 
-const Footer = () => {
+const Footer = ({ hasUnreadPowerUps, powerUps }) => {
   const navigation = useNavigation();
   const { userId } = useContext(AuthContext); // Get the current user's ID from AuthContext
 
@@ -23,8 +23,8 @@ const Footer = () => {
         <TouchableOpacity onPress={() => navigation.navigate('StartQuest')}>
           <MaterialCommunityIcons name="plus" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Development')}>
-          <MaterialCommunityIcons name="star" size={30} color="black" />
+        <TouchableOpacity onPress={() => navigation.navigate('PowerUp', { powerUps })}>
+          <MaterialCommunityIcons name="heart" size={30} color={hasUnreadPowerUps ? "red" : "#000"} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId })}>
           <MaterialCommunityIcons name="account" size={30} color="black" />

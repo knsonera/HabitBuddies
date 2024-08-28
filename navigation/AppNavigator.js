@@ -12,7 +12,7 @@ import EditQuestScreen from '../screens/EditQuestScreen';
 import QuestScreen from '../screens/QuestScreen';
 import ChatScreen from '../screens/ChatScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import DevelopmentScreen from '../screens/DevelopmentScreen';
+import PowerUpScreen from '../screens/PowerUpScreen';
 import SocialScreen from '../screens/SocialScreen';
 import SearchScreen from '../screens/SearchScreen';
 
@@ -38,7 +38,7 @@ const AppNavigator = () => {
         <Stack.Screen name="EditQuest" component={EditQuestScreen} />
         <Stack.Screen name="Quest" component={QuestScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
-        <Stack.Screen name="Development" component={DevelopmentScreen} />
+        <Stack.Screen name="PowerUp" component={PowerUpScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Social" component={SocialScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
