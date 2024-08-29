@@ -359,3 +359,10 @@ export const sendPowerUp = async (receiverId, eventType, eventId, message) => {
 export const fetchPowerUps = async () => {
     return requestWithAuth('/powerups/unread', 'GET');
 };
+
+export const markAsReadPowerUp = async (powerUpId) => {
+    if (!powerUpId) {
+        throw new Error('PowerUp ID is required');
+    }
+    return requestWithAuth(`/powerups/${powerUpId}/read`, 'PUT');
+};

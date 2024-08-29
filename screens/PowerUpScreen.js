@@ -1,17 +1,27 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useContext } from 'react';
+
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { markAsReadPowerUp } from '../services/apiService';
+
 import { useRoute } from '@react-navigation/native';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const PowerUpScreen = () => {
   const route = useRoute();
-  const { powerUps } = route.params;
+  const [powerUps, setPowerUps] = useState(route.params.powerUps);
 
-  const handleMarkAsRead = (powerUpId) => {
-    // Implement the function to mark power-up as read here
-    console.log(`Mark power-up ${powerUpId} as read`);
-    // You would typically send a request to the server to mark it as read
+  const handleMarkAsRead = async (powerUpId) => {
+    try {
+        await markAsReadPowerUp(powerUpId);
+
+        // Remove the marked power-up from the state
+        setPowerUps((prevPowerUps) => prevPowerUps.filter((powerUp) => powerUp.power_up_id !== powerUpId));
+    } catch (error) {
+        console.error('Error marking power-up as read:', error);
+        Alert.alert('Error', 'Failed to mark the power-up as read');
+    }
   };
 
   return (

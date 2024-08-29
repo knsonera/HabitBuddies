@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { fetchMessages, sendMessage } from '../services/apiService';
 import Header from '../components/Header';
@@ -12,25 +12,75 @@ const ChatScreen = ({ route }) => {
     const [newMessage, setNewMessage] = useState('');
     const [ws, setWs] = useState(null);
     const flatListRef = useRef(null);
+    const [showConnectionMessage, setShowConnectionMessage] = useState(false);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    const loadMessages = async () => {
+    const loadMessages = useCallback(async () => {
         try {
             const fetchedMessages = await fetchMessages(questId, authToken);
             setMessages(fetchedMessages);
         } catch (error) {
             console.error('Failed to load messages:', error);
         }
-    };
+    }, [questId, authToken]);
+
+    const showConnectionPopup = useCallback(() => {
+        setShowConnectionMessage(true);
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+        }).start(() => {
+            setTimeout(() => {
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                }).start(() => setShowConnectionMessage(false));
+            }, 2000);
+        });
+    }, [fadeAnim]);
+
+    const handleSend = useCallback(async () => {
+        if (newMessage.trim() === '') return;
+
+        const message = {
+            questId,
+            user_id: userId,
+            message_text: newMessage,
+            sent_at: new Date().toISOString(),
+        };
+
+        try {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
+
+                setNewMessage('');
+            } else {
+                await sendMessage(questId, message, authToken);
+                setNewMessage('');
+            }
+        } catch (error) {
+            console.error('Failed to send message:', error);
+        }
+    }, [newMessage, ws, questId, userId, authToken]);
 
     useEffect(() => {
+        if (ws) return;
+
         const createWebSocket = () => {
-            //const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
             const socket = new WebSocket(`ws://localhost:3000`, authToken);
 
             socket.onopen = () => console.log('WebSocket connected');
 
             socket.onmessage = event => {
                 console.log('Received WebSocket message:', event.data);
+
+                // Check for connection message
+                if (event.data === "You are connected.") {
+                    showConnectionPopup();  // Show the connection message
+                    return;
+                }
 
                 // Check if the incoming data is a non-empty JSON string
                 if (typeof event.data === 'string' && event.data.trim().startsWith('{')) {
@@ -46,19 +96,23 @@ const ChatScreen = ({ route }) => {
                     // Process the message if it's related to the current quest
                     if (message.questId === questId) {
                         setMessages(prevMessages => {
-                            const updatedMessages = [...prevMessages, message];
-                            if (updatedMessages.length > 0) {
-                                flatListRef.current.scrollToEnd({ animated: true });
+                            const messageExists = prevMessages.some(
+                                msg => msg.sent_at === message.sent_at && msg.user_id === message.user_id
+                            );
+                            if (!messageExists) {
+                                const updatedMessages = [...prevMessages, message];
+                                if (updatedMessages.length > 0) {
+                                    flatListRef.current.scrollToEnd({ animated: true });
+                                }
+                                return updatedMessages;
                             }
-                            return updatedMessages;
+                            return prevMessages;
                         });
                     }
                 } else if (Array.isArray(event.data) && event.data.length === 0) {
                     console.log('Received an empty message array');
-                    // Handle empty array messages if necessary
                 } else {
                     console.log('Non-JSON message received:', event.data);
-                    // Handle non-JSON messages if necessary, otherwise ignore them
                 }
             };
 
@@ -79,6 +133,7 @@ const ChatScreen = ({ route }) => {
         };
     }, [questId, authToken]);
 
+
     useFocusEffect(
         React.useCallback(() => {
             loadMessages();
@@ -86,64 +141,30 @@ const ChatScreen = ({ route }) => {
                 if (messages.length > 0) {
                     flatListRef.current.scrollToEnd({ animated: false });
                 }
-            }, 100); // Timeout to ensure messages are loaded
-        }, [userId])
+            }, 1000); // Timeout to ensure messages are loaded
+        }, [userId, loadMessages])
     );
-
-    const handleSend = async () => {
-        if (newMessage.trim() === '') return;
-
-        const message = {
-            questId,
-            user_id: userId,
-            message_text: newMessage,
-            sent_at: new Date().toISOString(),
-        };
-
-        try {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                // Send the message via WebSocket
-                ws.send(JSON.stringify(message));
-                // Optimistically update the UI
-                setMessages(prevMessages => [...prevMessages, message]);
-                setNewMessage('');
-
-                // Scroll to the bottom
-                setTimeout(() => {
-                    if (flatListRef.current && messages.length > 0) {
-                        flatListRef.current.scrollToEnd({ animated: true });
-                    }
-                }, 100);
-            } else {
-                // Fallback to API if WebSocket is not available
-                await sendMessage(questId, message, authToken);
-                setMessages(prevMessages => [...prevMessages, message]);
-                setNewMessage('');
-
-                // Scroll to the bottom
-                setTimeout(() => {
-                    if (flatListRef.current && messages.length > 0) {
-                        flatListRef.current.scrollToEnd({ animated: true });
-                    }
-                }, 100);
-            }
-        } catch (error) {
-            console.error('Failed to send message:', error);
-        }
-    };
 
     const handleEnterPress = () => {
         handleSend();
         Keyboard.dismiss();
     };
 
-    const renderItem = ({ item }) => (
-        <View style={styles.messageItem}>
-            <Text style={styles.boldText}>{item.username}:</Text>
-            <Text style={styles.messageText}>{item.message_text}</Text>
-            <Text style={styles.messageTime}>{new Date(item.sent_at).toLocaleTimeString()}</Text>
-        </View>
-    );
+    const renderItem = ({ item }) => {
+        console.log('Rendering item:', item);
+
+        const isCurrentUser = item.user_id === userId;
+
+        return (
+            <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
+                {!isCurrentUser && (
+                    <Text style={styles.boldText}>{item.username || 'User'}:</Text>
+                )}
+                <Text style={styles.messageText}>{item.message_text}</Text>
+                <Text style={styles.messageTime}>{new Date(item.sent_at).toLocaleTimeString()}</Text>
+            </View>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -160,15 +181,15 @@ const ChatScreen = ({ route }) => {
                         <Text style={styles.noMessagesText}>No messages yet</Text>
                     </View>
                 ) : (
-                  <FlatList
-                    ref={flatListRef}
-                    data={messages}
-                    renderItem={renderItem}
-                    keyExtractor={(item, index) => item.message_id ? item.message_id.toString() : `key-${index}`}
-                    contentContainerStyle={styles.scrollViewContent}
-                    initialNumToRender={10}
-                    onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })}
-                 />
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        renderItem={renderItem}
+                        keyExtractor={(item, index) => item.message_id ? item.message_id.toString() : `key-${index}`}
+                        contentContainerStyle={styles.scrollViewContent}
+                        initialNumToRender={10}
+                        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })}
+                    />
                 )}
 
                 <View style={styles.newMessageContainer}>
@@ -191,6 +212,12 @@ const ChatScreen = ({ route }) => {
                         <Text style={styles.sendButtonText}>Send</Text>
                     </TouchableOpacity>
                 </View>
+
+                {showConnectionMessage && (
+                    <Animated.View style={[styles.connectionMessageContainer, { opacity: fadeAnim }]}>
+                        <Text style={styles.connectionMessageText}>You are connected.</Text>
+                    </Animated.View>
+                )}
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -208,7 +235,7 @@ const styles = StyleSheet.create({
     scrollViewContent: {
         width: '100%',
         paddingTop: 10,
-        marginLeft: 20,
+        paddingHorizontal: 20,
     },
     title: {
         fontSize: 20,
@@ -217,20 +244,36 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     messageItem: {
-        width: '100%',
         padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
+        maxWidth: '80%',
+        borderRadius: 10,
+        marginVertical: 5,
+    },
+    currentUserMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#eee',
+    },
+    otherUserMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: '#ccc'
     },
     messageText: {
         fontSize: 16,
+        paddingHorizontal: 5,
     },
     boldText: {
         fontWeight: 'bold',
+        paddingHorizontal: 5,
     },
     messageTime: {
         fontSize: 12,
         color: '#999',
+        textAlign: 'right',
+        marginTop: 5,
+        paddingHorizontal: 5,
+
     },
     noMessagesContainer: {
         flex: 1,
@@ -257,13 +300,29 @@ const styles = StyleSheet.create({
     },
     sendButton: {
         marginLeft: 10,
-        backgroundColor: '#007BFF',
+        backgroundColor: '#444',
         padding: 10,
         borderRadius: 4,
     },
     sendButtonText: {
         color: '#FFF',
         fontSize: 16,
+    },
+    connectionMessageContainer: {
+        position: 'absolute',
+        top: 110,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 20,
+    },
+    connectionMessageText: {
+        color: '#FFF',
+        fontSize: 14,
     },
 });
 

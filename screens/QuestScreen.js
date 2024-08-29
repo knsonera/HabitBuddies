@@ -5,6 +5,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
+import { getUserId } from '../services/authService';
 import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite, createCheckIn, fetchQuestCheckIns, fetchUserCheckInsForQuestToday } from '../services/apiService';
 import iconsData from '../assets/icons';
 import Header from '../components/Header';
