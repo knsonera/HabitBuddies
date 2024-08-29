@@ -181,7 +181,7 @@ const QuestScreen = ({ route }) => {
   const handleCheckInSubmit = async () => {
     if (comment.trim()) {
         try {
-            await createCheckIn(questDetails.quest_id, comment); // Pass correct quest_id
+            await createCheckIn(questDetails.quest_id, comment);
             Alert.alert('Success', 'Check-in submitted successfully.');
 
             // Fetch the updated check-ins
@@ -568,7 +568,7 @@ const QuestScreen = ({ route }) => {
       {/* Checkin Modal */}
       <Modal
           transparent={true}
-          visible={checkinModalVisible} // Ensure you're using the correct state here
+          visible={checkinModalVisible}
           onRequestClose={() => setCheckinModalVisible(false)}
       >
         <View style={styles.checkinModalContainer}>
@@ -611,7 +611,7 @@ const QuestScreen = ({ route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -637,11 +637,11 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   buttonContainer: {
-    width: '100%', // Full width for the container
-    flexDirection: 'row', // Align buttons in a row
-    justifyContent: 'center', // Center the buttons horizontally
-    alignItems: 'center', // Center the buttons vertically
-    marginVertical: 10, // Vertical margin for spacing
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 10,
   },
   button: {
     flexDirection: 'row',
@@ -651,12 +651,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
-    backgroundColor: '#f5f5f5', // Light background for better visibility
-    marginHorizontal: 5, // Add spacing between buttons
-    justifyContent: 'center', // Center the content inside the button
+    backgroundColor: '#f5f5f5',
+    marginHorizontal: 5,
+    justifyContent: 'center',
   },
   buttonText: {
-    marginLeft: 8, // Spacing between icon and text
+    marginLeft: 8,
     fontSize: 14,
     color: '#000000',
   },
@@ -685,15 +685,15 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    color: '#000', // Same color as the progress bar
+    color: '#000',
     marginTop: 5,
   },
   actionButtonContainer: {
     width: '100%',
     alignItems: 'center',
-    flexDirection: 'row', // Align buttons in a row
-    flexWrap: 'wrap', // Allow buttons to wrap to the next line if necessary
-    justifyContent: 'center', // Center the buttons
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   actionButton: {
     flexDirection: 'row',
@@ -703,8 +703,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 10,
-    backgroundColor: '#f5f5f5', // Light background for better visibility
-    margin: 5, // Add spacing between buttons
+    backgroundColor: '#f5f5f5',
+    margin: 5,
   },
   actionButtonText: {
     marginLeft: 10,
@@ -738,21 +738,21 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   participantItem: {
-    flexDirection: 'row', // Align items in a row
-    justifyContent: 'space-between', // Space between the text and button
-    alignItems: 'center', // Center items vertically
-    paddingVertical: 10, // Padding for spacing
-    paddingHorizontal: 10, // Horizontal padding for spacing
-    borderBottomWidth: 1, // Bottom border to separate items
-    borderBottomColor: '#ddd', // Light gray color for the border
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   participantText: {
     fontSize: 16,
     color: '#000',
-    flex: 1, // Allow text to take up as much space as needed
+    flex: 1,
   },
   participantActions: {
-    flexDirection: 'row', // Arrange buttons in a row
+    flexDirection: 'row',
   },
   approveButton: {
     borderWidth: 1,
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
-    marginLeft: 10, // Space between buttons
+    marginLeft: 10,
   },
   removeButton: {
     borderWidth: 1,
@@ -768,24 +768,24 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 5,
-    marginLeft: 10, // Space between buttons
+    marginLeft: 10,
   },
   buttonText: {
-    color: '#000000', // White text color
+    color: '#000000',
     fontSize: 14,
     paddingHorizontal: 5,
   },
   pendingText: {
     fontSize: 16,
     color: '#999999',
-    textAlign: 'center', // Center the text horizontally
+    textAlign: 'center',
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderWidth: 1,
     borderColor: '#999999',
     borderRadius: 10,
-    alignSelf: 'center', // Ensure the text is centered within its parent
-    marginVertical: 10, // Margin for spacing
+    alignSelf: 'center',
+    marginVertical: 10,
   },
   confirmationModalContainer: {
     flex: 1,
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     borderRadius: 10,
     backgroundColor: '#f5f5f5',
-    marginHorizontal: 5, // Add spacing between buttons
+    marginHorizontal: 5,
     alignItems: 'center',
   },
   cancelButton: {
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderRadius: 5,
-    marginRight: 10, // Add space between buttons
+    marginRight: 10,
   },
   declineButton: {
     padding: 10,
@@ -844,19 +844,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent black background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   checkinModalContent: {
     width: '80%',
-    backgroundColor: '#fff', // White background for the modal content
+    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
     alignItems: 'center',
-    shadowColor: '#000', // Shadow properties for iOS
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5, // Elevation for Android
+    elevation: 5,
   },
   closeButton: {
     position: 'absolute',
@@ -867,11 +867,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333', // Darker text for contrast
+    color: '#333',
   },
   checkinModalDateTime: {
     fontSize: 16,
-    color: '#666', // Lighter gray for date and time
+    color: '#666',
     marginBottom: 20,
   },
   textField: {
@@ -882,7 +882,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 10,
     marginBottom: 20,
-    backgroundColor: '#f9f9f9', // Light background for the input field
+    backgroundColor: '#f9f9f9',
   },
   checkinSubmitButton: {
     width: '50%',
@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
   checkinHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // Space between name and date
+    justifyContent: 'space-between',
     marginBottom: 5,
   },
   checkmarkIcon: {
@@ -937,7 +937,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    flex: 1, // Allows the name to take up available space
+    flex: 1,
   },
   checkinDate: {
     fontSize: 12,

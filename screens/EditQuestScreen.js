@@ -81,11 +81,11 @@ const EditQuestScreen = ({ route }) => {
         time: time !== questDetails.time ? time : undefined,
         zoom_link: zoomLink !== questDetails.zoom_link ? zoomLink : undefined,
         icon_id: icon && icons.indexOf(icon) !== questDetails.icon_id ? icons.indexOf(icon) : undefined,
-        start_date: new Date().toISOString(), // Use the current date for start_date
+        start_date: new Date().toISOString(),
         end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
-        category_id: questDetails.category_id, // Use existing category_id
-        status: questDetails.status, // Use existing status
-        created_by: userId // Include userId as created_by
+        category_id: questDetails.category_id,
+        status: questDetails.status,
+        created_by: userId
       };
 
       // Filter out undefined fields
@@ -232,7 +232,7 @@ const EditQuestScreen = ({ route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
   },
   scrollViewContent: {
     flexGrow: 1,

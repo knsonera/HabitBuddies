@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
@@ -18,25 +18,35 @@ const Header = ({ userInfo }) => {
     navigation.navigate('Home');
   };
 
+  const screenWidth = Dimensions.get('window').width;
+  const titleWidth = 0;
+  const iconWidth = 65;
+
+  const marginLeft = screenWidth / 2 - iconWidth;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
-        {route.name !== 'Home' ? (
-          <View style={styles.headerLeftContainer}>
+        <View style={styles.headerLeftContainer}>
+          {route.name !== 'Home' ? (
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <MaterialCommunityIcons name="arrow-left" size={30} color="black" />
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.headerTitle} onPress={goToHome}>
-              <Text style={styles.headerTitle}>Habit Buddies</Text>
+          ) : (
+            <TouchableOpacity disabled={true}>
+              <MaterialCommunityIcons name="account-group" size={30} color="black" />
             </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.headerLeftContainer}>
-            <MaterialCommunityIcons name="account-group" size={30} color="black" />
-            <Text style={styles.headerTitle}>Habit Buddies</Text>
-          </View>
-        )}
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.headerTitle, { marginLeft }]}
+          onPress={route.name !== 'Home' ? goToHome : null}
+          disabled={route.name === 'Home'}
+        >
+          <Text style={styles.headerTitleText}>Habit Buddies</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={handleLogout}>
           <MaterialCommunityIcons name="logout" size={30} color="black" />
         </TouchableOpacity>
@@ -63,10 +73,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+  },
+  headerTitleText: {
     fontSize: 20,
     fontWeight: 'bold',
     color: 'black',
-    marginLeft: 50,  // TODO: change to width/2 - C
   },
 });
 

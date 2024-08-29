@@ -35,7 +35,7 @@ const StartQuestScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
   },
   scrollViewContent: {
     flexGrow: 1,

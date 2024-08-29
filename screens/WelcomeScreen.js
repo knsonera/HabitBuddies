@@ -75,6 +75,7 @@ const WelcomeScreen = () => {
   const renderInputField = (placeholder, value, onChangeText, secureTextEntry = false) => (
     <TextInput
       placeholder={placeholder}
+      placeholderTextColor="#444"
       style={styles.input}
       value={value}
       autoCapitalize="none"

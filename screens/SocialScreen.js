@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderColor: '#E8E8E8',
     borderWidth: 1,
-    position: 'relative', // Ensure the power-up button is positioned relative to the container
+    position: 'relative',
     paddingBottom: 35,
   },
   name: {

@@ -120,7 +120,7 @@ export const fetchUserInfo = async (userId = null) => {
 export const createQuest = async (questData, refreshQuests) => {
     try {
         const newQuest = await requestWithAuth('/quests', 'POST', questData);
-        // Optionally trigger a re-fetch of quests after creation
+        // re-fetch of quests after creation
         if (refreshQuests) {
             await refreshQuests();
         }
@@ -250,6 +250,7 @@ export const fetchUserFriends = async (userId) => {
   return response;
 };
 
+// Join Quests
 export const requestToJoinQuest = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -276,6 +277,7 @@ export const inviteFriendToQuest = async (questId, friendId, currentUserId) => {
     return requestWithAuth(`/quests/${questId}/invite`, 'POST', { userId: friendId, inviterId: currentUserId });
 };
 
+// Approve Invite to Quest
 export const acceptQuestInvite = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -284,6 +286,7 @@ export const acceptQuestInvite = async (questId) => {
     return requestWithAuth(`/quests/${questId}/invite-accept`, 'POST');
 };
 
+// Decline Invite to Quest
 export const declineQuestInvite = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -292,6 +295,7 @@ export const declineQuestInvite = async (questId) => {
     return requestWithAuth(`/quests/${questId}/invite-delete`, 'DELETE');
 };
 
+// Check-ins
 export const createCheckIn = async (questId, comment = '') => {
     const userId = await getUserId();
     if (!questId || !userId) {
@@ -335,6 +339,7 @@ export const fetchUserCheckInsToday = async (userId) => {
     return requestWithAuth(`/users/${userId}/checkins/today`, 'GET');
 };
 
+// News Feed
 export const fetchQuestsFeed = async () => {
     return requestWithAuth('/feeds/quests', 'GET');
 };
@@ -343,6 +348,7 @@ export const fetchCheckinsFeed = async () => {
     return requestWithAuth('/feeds/checkins', 'GET');
 };
 
+// Power-Ups
 export const sendPowerUp = async (receiverId, eventType, eventId, message) => {
     if (!receiverId || !eventType || !eventId || !message) {
         throw new Error('All parameters are required to send a power-up');

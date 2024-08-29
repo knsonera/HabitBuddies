@@ -83,7 +83,7 @@ const NewQuestScreen = ({ route }) => {
             icon_id: icon ? icons.indexOf(icon) : null, // Calculate icon_id from index
             start_date: new Date().toISOString(), // Use the current date for start_date
             end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
-            category_id: 1, // Default category_id, replace as needed
+            category_id: 1,
             status: 'active', // Default status
             created_by: userId // Include userId as created_by
           };
@@ -116,12 +116,14 @@ const NewQuestScreen = ({ route }) => {
       <TextInput
         style={styles.input}
         placeholder="Quest Name"
+        placeholderTextColor="#444"
         value={name}
         onChangeText={setName}
       />
       <TextInput
         style={styles.input}
         placeholder="Description"
+        placeholderTextColor="#444"
         value={description}
         onChangeText={setDescription}
       />
@@ -129,6 +131,7 @@ const NewQuestScreen = ({ route }) => {
         <TextInput
           style={[styles.input, { flex: 2 }]}
           placeholder="Duration"
+          placeholderTextColor="#444"
           keyboardType="numeric"
           value={duration}
           onChangeText={setDuration}
@@ -170,6 +173,7 @@ const NewQuestScreen = ({ route }) => {
       <TextInput
         style={styles.input}
         placeholder="Zoom Link"
+        placeholderTextColor="#444"
         autoCapitalize="none"
         value={zoomLink}
         onChangeText={setZoomLink}
@@ -232,7 +236,7 @@ const NewQuestScreen = ({ route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF', 
   },
   scrollViewContent: {
     flexGrow: 1,

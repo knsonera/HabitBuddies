@@ -20,7 +20,7 @@ const QuestTemplatesScreen = () => {
   }, []);
 
   const renderIcon = (icon_id) => {
-    const icon = iconsData.icons[icon_id - 1] || { name: "star", library: "FontAwesome" };
+    const icon = iconsData.icons[icon_id] || { name: "star", library: "FontAwesome" };
 
     switch (icon.library) {
       case 'FontAwesome':
@@ -37,7 +37,7 @@ const QuestTemplatesScreen = () => {
       <TouchableOpacity
         key={quest.quest_id}
         style={styles.questItem}
-        onPress={() => navigation.navigate('NewQuest', { questDetails: quest })} // Navigate and pass data
+        onPress={() => navigation.navigate('NewQuest', { questDetails: quest })}
       >
         {renderIcon(quest.icon_id)}
         <View style={styles.questDetails}>

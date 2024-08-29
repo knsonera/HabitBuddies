@@ -26,7 +26,7 @@ const HomeScreen = () => {
 
   const loadUserData = async () => {
     try {
-      await refreshTokens(); // Ensure tokens are refreshed if necessary
+      await refreshTokens();
     } catch (error) {
       console.error('Failed to load user data:', error);
     }
@@ -34,7 +34,7 @@ const HomeScreen = () => {
 
   const loadTodayCheckIns = async () => {
     try {
-      const todayCheckIns = await fetchUserCheckInsToday(userId); // You need to implement this in your apiService
+      const todayCheckIns = await fetchUserCheckInsToday(userId);
       console.log(todayCheckIns);
       setCheckins(todayCheckIns);
     } catch (error) {
@@ -44,9 +44,8 @@ const HomeScreen = () => {
 
   const loadUserQuests = async () => {
     try {
-        const userQuests = await fetchUserQuests(userId); // Ensure tokens are refreshed if necessary
-
-        console.log('Fetched Quests:', userQuests); // What is being fetched?
+        const userQuests = await fetchUserQuests(userId);
+        console.log('Fetched Quests:', userQuests);
         setQuests(userQuests);
     } catch (error) {
         console.error('Failed to load user quests:', error);
@@ -414,7 +413,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
   },
   modalContent: {
     width: '80%',

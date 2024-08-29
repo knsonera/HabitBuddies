@@ -22,7 +22,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const [userQuests, setUserQuests] = useState({ current: [], past: [] });
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(true);
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isFriendRequestToCurrentUser, setIsFriendRequestToCurrentUser] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
@@ -48,7 +48,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const getFriendsData = async () => {
     try {
       const friends = await fetchUserFriends(userIdToFetch);
-      console.log('Friends List:', friends); // Log the fetched friends
+      console.log('Friends List:', friends); 
       setFriendsList(friends);
     } catch (error) {
       console.error('Failed to fetch friends list:', error);
