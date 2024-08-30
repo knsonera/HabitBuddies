@@ -186,7 +186,7 @@ const EditQuestScreen = ({ route }) => {
         {icon && renderIcon(icon)}
       </TouchableOpacity>
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Start a Quest</Text>
+        <Text style={styles.submitButtonText}>Submit</Text>
       </TouchableOpacity>
     </View>
   );
