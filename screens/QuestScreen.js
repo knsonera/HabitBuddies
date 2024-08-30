@@ -323,6 +323,14 @@ const QuestScreen = ({ route }) => {
       return;
     }
 
+    // Check if the friend is already a participant
+    const isAlreadyParticipant = participants.some(participant => participant.user_id === friendId);
+
+    if (isAlreadyParticipant) {
+      Alert.alert('Notice', 'This friend is already a participant in the quest.');
+      return;
+    }
+
     try {
       await inviteFriendToQuest(questDetails.quest_id, friendId, currentUserId);
       Alert.alert('Success', `Invite sent to ${friendId}`);
@@ -442,7 +450,6 @@ const QuestScreen = ({ route }) => {
           <View style={styles.detailsContainer}>
             <Text style={styles.sectionTitle}>Quest Information</Text>
             <Text style={styles.detailsText}>{questDetails.description}</Text>
-            <Text style={styles.detailsText}>Category: {category || 'Loading...'}</Text>
             <Text style={styles.detailsText}>Duration: {questDetails.duration}</Text>
           </View>
 
@@ -567,19 +574,26 @@ const QuestScreen = ({ route }) => {
               onChangeText={handleSearchChange}
             />
             <ScrollView style={styles.participantsList}>
-              {filteredFriends.map((friend, index) => (
-                <View key={index} style={styles.participantItem}>
-                  <Text style={styles.participantText}>
-                    {friend.fullname} ({friend.username})
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.inviteButton}
-                    onPress={() => handleInviteFriend(friend.user_id)}
-                  >
-                    <MaterialCommunityIcons name="plus-circle" size={20} color="#000" />
-                  </TouchableOpacity>
-                </View>
-              ))}
+              {filteredFriends.map((friend, index) => {
+                // Check if the friend is already a participant
+                const isAlreadyParticipant = participants.some(participant => participant.user_id === friend.user_id);
+
+                return (
+                  <View key={index} style={styles.participantItem}>
+                    <Text style={styles.participantText}>
+                      {friend.fullname} ({friend.username})
+                    </Text>
+                    {!isAlreadyParticipant && (
+                      <TouchableOpacity
+                        style={styles.inviteButton}
+                        onPress={() => handleInviteFriend(friend.user_id)}
+                      >
+                        <MaterialCommunityIcons name="plus-circle" size={20} color="#000" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         </View>
