@@ -69,7 +69,7 @@ const ChatScreen = ({ route }) => {
         if (ws) return;
 
         const createWebSocket = () => {
-            const socket = new WebSocket(`ws://localhost:3000`, authToken);
+            const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
 
             socket.onopen = () => console.log('WebSocket connected');
 

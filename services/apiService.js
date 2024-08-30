@@ -1,8 +1,8 @@
 import { getAuthToken, setAuthToken, clearAuthToken, getRefreshToken, getUserId, refreshAuthToken } from './authService';
 import { makeRequest } from './requestService';
 
-//const BASE_URL = 'https://www.uzhvieva.com:443';
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://www.uzhvieva.com:443';
+//const BASE_URL = 'http://localhost:3000';
 
 // Function to handle unauthenticated requests
 export const requestWithoutAuth = async (endpoint, method = 'POST', body = null) => {
