@@ -44,7 +44,9 @@ const QuestScreen = ({ route }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [category, setCategory] = useState('');
+  const [totalDays, setTotalDays] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [daysPassed, setDaysPassed] = useState(0);
   const [userRole, setUserRole] = useState(null);
   const [userStatus, setUserStatus] = useState(null);
   const [ownerId, setOwnerId] = useState(null);
@@ -81,12 +83,16 @@ const QuestScreen = ({ route }) => {
     }
   };
 
-  const calculateProgress = (startDate, duration) => {
-    const totalDays = parseDuration(duration);
+  const calculateDaysPassed = (startDate, duration) => {
     const start = new Date(startDate);
     const now = new Date();
-
     const daysPassed = Math.ceil((now - start) / (1000 * 60 * 60 * 24)); // Difference in days
+    return daysPassed;
+  };
+
+  const calculateProgress = (startDate, duration) => {
+    const totalDays = parseDuration(duration);
+    const daysPassed = calculateDaysPassed(startDate, duration);
     const progress = Math.max(0, Math.min((daysPassed / totalDays) * 100, 100));
 
     return progress;
@@ -104,6 +110,12 @@ const QuestScreen = ({ route }) => {
         // Load Category using the owner's ID
         const categoryData = await fetchQuestCategory(questDetails.quest_id, ownerData.user_id);
         setCategory(categoryData.category_name);
+
+        const questTotalDays = parseDuration(questDetails.duration);
+        setTotalDays(questTotalDays);
+
+        const questDaysPassed = calculateDaysPassed(questDetails.start_date, questDetails.duration);
+        setDaysPassed(questDaysPassed);
 
         // Calculate and Set Progress
         const questProgress = calculateProgress(questDetails.start_date, questDetails.duration);
@@ -424,7 +436,7 @@ const QuestScreen = ({ route }) => {
               borderRadius={5}
               height={10}
             />
-            <Text style={styles.detailsText}>{`${progress.toFixed(0)}% complete`}</Text>
+            <Text style={styles.detailsText}>{`${daysPassed.toFixed(0)} out of ${totalDays.toFixed(0)} days`}</Text>
           </View>
 
           <View style={styles.detailsContainer}>

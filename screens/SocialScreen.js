@@ -61,7 +61,7 @@ const SocialScreen = () => {
   const renderQuests = () => (
     <ScrollView style={styles.contentContainer}>
       {questsFeed.length === 0 ? (
-        <Text style={styles.noUpdates}>No new quests available.</Text>
+        <Text style={styles.noUpdates}>No new friends' quests.</Text>
       ) : (
         questsFeed.map((item) => (
           <View key={item.quest_id} style={styles.updateContainer}>
@@ -89,7 +89,7 @@ const SocialScreen = () => {
   const renderCheckins = () => (
     <ScrollView style={styles.contentContainer}>
       {checkinsFeed.length === 0 ? (
-        <Text style={styles.noUpdates}>No recent check-ins available.</Text>
+        <Text style={styles.noUpdates}>No new friends' check-ins.</Text>
       ) : (
         checkinsFeed.map((item) => (
           <View key={item.checkin_id} style={styles.updateContainer}>
@@ -116,7 +116,7 @@ const SocialScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header />
-      <Text style={styles.screenTitle}>Latest Updates</Text>
+      <Text style={styles.screenTitle}>What's new?</Text>
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'quests' && styles.activeTabButton]}
@@ -132,7 +132,7 @@ const SocialScreen = () => {
         </TouchableOpacity>
       </View>
       {loading ? (
-        <ActivityIndicator size="large" color="#007AFF" style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color="#444" style={{ flex: 1 }} />
       ) : (
         <>
           {activeTab === 'quests' && renderQuests()}
@@ -179,19 +179,21 @@ const SocialScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   screenTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#000',
     textAlign: 'center',
-    marginVertical: 10,
+    marginTop: 15,
+    marginBottom: 10,
   },
   tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#f2f2f2',
-    paddingVertical: 10,
+    justifyContent: 'space-evenly',
+    backgroundColor: '#fff',
+    paddingTop: 10,
     marginBottom: 0,
   },
   tabButton: {
@@ -200,8 +202,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   activeTabButton: {
-    backgroundColor: '#444',
-    borderBottomWidth: 1,
+    backgroundColor: '#ccc',
     marginBottom: 0,
   },
   tabButtonText: {
@@ -209,13 +210,13 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   activeTabButtonText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: '600',
   },
   contentContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#444',
+    backgroundColor: '#ccc',
     marginTop: 0,
   },
   updateContainer: {
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
   },
   noUpdates: {
     fontSize: 16,
-    color: '#999999',
+    color: '#444',
     textAlign: 'center',
     marginTop: 20,
   },

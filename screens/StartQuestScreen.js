@@ -37,13 +37,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  screenTitle: {
+    fontSize: 20,
+    color: '#000',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 10,
+  },
   scrollViewContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingTop: 60,
-    paddingBottom: 60,
   },
   contentContainer: {
     flex: 1,
@@ -58,16 +63,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#AAAAAA',
-    marginHorizontal: 10,
-    marginVertical: 10,
-    padding: 10,
     borderWidth: 1,
-    borderColor: '#000000',
-    borderRadius: 5,
+    borderColor: '#fff'
   },
   halfText: {
     fontSize: 24,
-    color: '#000000',
+    color: '#000',
     textAlign: 'center',
   },
 });
