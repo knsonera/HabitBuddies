@@ -26,6 +26,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isFriendRequestToCurrentUser, setIsFriendRequestToCurrentUser] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
+  const [error, setError] = useState(null);
 
   const checkFriendshipStatus = async () => {
     try {
@@ -46,12 +47,15 @@ const ProfileScreen = ({ route, navigation }) => {
   };
 
   const getFriendsData = async () => {
+    setLoading(true);
     try {
       const friends = await fetchUserFriends(userIdToFetch);
-      console.log('Friends List:', friends); 
+      console.log('Friends List:', friends);
       setFriendsList(friends);
     } catch (error) {
       console.error('Failed to fetch friends list:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,14 +90,32 @@ const ProfileScreen = ({ route, navigation }) => {
     }
   };
 
+  const getProfileContent = async () => {
+    try {
+        // Set loading to true at the beginning
+        setLoading(true);
+
+        // Await all data-loading functions
+        await Promise.all([
+          checkFriendshipStatus(),
+          getUserData(),
+          getFriendsData()
+        ]);
+
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // Optionally handle the error or set loading to false
+    } finally {
+        // Set loading to false after all promises resolve or reject
+        setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!userIdToFetch) {
       console.error('Error: User ID is undefined');
     }
-    checkFriendshipStatus();
-    getUserData();
-    getFriendsData();
+    getProfileContent();
 
   }, [userIdToFetch, currentUserId]);
 
@@ -199,8 +221,22 @@ const ProfileScreen = ({ route, navigation }) => {
       <SafeAreaView style={styles.safeArea}>
         <Header />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#444" />
           <Text>Loading...</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.errorContainer}>
+          <Text>Something went wrong.</Text>
+          <Text>{error}</Text>
+          <Button title="Retry" onPress={() => fetchData()} />
         </View>
         <Footer />
       </SafeAreaView>

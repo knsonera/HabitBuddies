@@ -134,6 +134,7 @@ export const createQuest = async (questData, refreshQuests) => {
 // Edit an existing quest
 export const editQuest = async (questData) => {
     const { userQuestId, ...data } = questData;
+    console.log(userQuestId);
     return requestWithAuth(`/quests/${userQuestId}`, 'PUT', data);
 };
 

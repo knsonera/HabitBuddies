@@ -36,6 +36,7 @@ const EditQuestScreen = ({ route }) => {
   const navigation = useNavigation();
   const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
 
+  const [initialQuestDetails, setInitialQuestDetails] = useState(questDetails);
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
   const [description, setDescription] = useState(questDetails ? questDetails.description : '');
   const [duration, setDuration] = useState('');
@@ -64,7 +65,7 @@ const EditQuestScreen = ({ route }) => {
   }, [questDetails]);
 
   const validateForm = () => {
-    if (!name || !description || !duration || !zoomLink) {
+    if (!name || !description || !duration) {
       alert('Please fill all the fields.');
       return false;
     }
@@ -72,34 +73,33 @@ const EditQuestScreen = ({ route }) => {
   };
 
   const handleSubmit = async () => {
-    if (validateForm()) {
-      const newQuestDetails = {
-        quest_name: name !== questDetails.quest_name ? name : undefined,
-        description: description !== questDetails.description ? description : undefined,
-        duration: `${duration} ${durationUnit}` !== questDetails.duration ? `${duration} ${durationUnit}` : undefined,
-        checkin_frequency: frequency !== questDetails.checkin_frequency ? frequency : undefined,
-        time: time !== questDetails.time ? time : undefined,
-        zoom_link: zoomLink !== questDetails.zoom_link ? zoomLink : undefined,
-        icon_id: icon && icons.indexOf(icon) !== questDetails.icon_id ? icons.indexOf(icon) : undefined,
-        start_date: new Date().toISOString(),
-        end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
-        category_id: questDetails.category_id,
-        status: questDetails.status,
-        created_by: userId
-      };
+      if (validateForm()) {
+          const newQuestDetails = {
+              userQuestId: questDetails.quest_id,
+              quest_name: name !== initialQuestDetails.quest_name ? name : initialQuestDetails.quest_name,
+              description: description !== initialQuestDetails.description ? description : initialQuestDetails.description,
+              duration: `${duration} ${durationUnit}` !== initialQuestDetails.duration ? `${duration} ${durationUnit}` : initialQuestDetails.duration,
+              checkin_frequency: frequency !== initialQuestDetails.checkin_frequency ? frequency : initialQuestDetails.checkin_frequency,
+              time: time !== initialQuestDetails.time ? time : initialQuestDetails.time,
+              zoom_link: zoomLink !== initialQuestDetails.zoom_link ? zoomLink : initialQuestDetails.zoom_link,
+              icon_id: icon ? icons.indexOf(icon) : initialQuestDetails.icon_id,
+              start_date: new Date().toISOString(),
+              end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(),
+              category_id: initialQuestDetails.category_id,
+              status: initialQuestDetails.status,
+              created_by: userId
+          };
 
-      // Filter out undefined fields
-      const filteredQuestDetails = Object.fromEntries(Object.entries(newQuestDetails).filter(([_, v]) => v !== undefined));
-
-      try {
-        await editQuest(filteredQuestDetails, authToken);
-        alert('Quest updated successfully!');
-        navigation.navigate('Home');
-      } catch (error) {
-        console.error('Failed to edit the quest:', error);
-        alert('Failed to edit the quest.');
+          try {
+              console.log('Sending quest data:', newQuestDetails); // For debugging
+              await editQuest(newQuestDetails, authToken);
+              alert('Quest updated successfully!');
+              navigation.navigate('Home');
+          } catch (error) {
+              console.error('Failed to edit the quest:', error);
+              alert('Failed to edit the quest.');
+          }
       }
-    }
   };
 
   const renderIcon = (icon) => {
@@ -116,12 +116,14 @@ const EditQuestScreen = ({ route }) => {
       <TextInput
         style={styles.input}
         placeholder="Quest Name"
+        placeholderTextColor="#444"
         value={name}
         onChangeText={setName}
       />
       <TextInput
         style={styles.input}
         placeholder="Description"
+        placeholderTextColor="#444"
         value={description}
         onChangeText={setDescription}
       />
@@ -129,6 +131,7 @@ const EditQuestScreen = ({ route }) => {
         <TextInput
           style={[styles.input, { flex: 2 }]}
           placeholder="Duration"
+          placeholderTextColor="#444"
           keyboardType="numeric"
           value={duration}
           onChangeText={setDuration}
@@ -170,6 +173,7 @@ const EditQuestScreen = ({ route }) => {
       <TextInput
         style={styles.input}
         placeholder="Zoom Link"
+        placeholderTextColor="#444"
         autoCapitalize="none"
         value={zoomLink}
         onChangeText={setZoomLink}
@@ -182,7 +186,7 @@ const EditQuestScreen = ({ route }) => {
         {icon && renderIcon(icon)}
       </TouchableOpacity>
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Save Changes</Text>
+        <Text style={styles.submitButtonText}>Start a Quest</Text>
       </TouchableOpacity>
     </View>
   );
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
   },

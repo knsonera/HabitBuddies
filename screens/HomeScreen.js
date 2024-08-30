@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, fetchUserCheckInsToday, fetchPowerUps } from '../services/apiService';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -23,6 +23,8 @@ const HomeScreen = () => {
   const [comment, setComment] = useState([]);
   const [powerUps, setPowerUps] = useState([]);
   const [hasUnreadPowerUps, setHasUnreadPowerUps] = useState(false); // State to track unread power-ups
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const loadUserData = async () => {
     try {
@@ -63,11 +65,31 @@ const HomeScreen = () => {
     }
   };
 
+  const loadData = async () => {
+    try {
+        // Set loading to true at the beginning
+        setLoading(true);
+
+        // Await all data-loading functions
+        await Promise.all([
+            loadUserData(),
+            loadTodayCheckIns(),
+            loadUserQuests(),
+            loadPowerUps()
+        ]);
+
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // Optionally handle the error or set loading to false
+    } finally {
+        // Set loading to false after all promises resolve or reject
+        setLoading(false);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
-      loadUserQuests();
-      loadTodayCheckIns();
-      loadPowerUps(); // Load power-ups when the screen is focused
+      loadData(); // Load power-ups when the screen is focused
     }, [userId])
   );
 
@@ -90,6 +112,11 @@ const HomeScreen = () => {
         Alert.alert('Success', 'Check-in submitted successfully.');
         setModalVisible(false);
         setComment(''); // Clear the comment field
+
+        // Fetch the updated check-ins from the server
+        await loadTodayCheckIns();
+        // Refresh quests
+        await loadUserQuests();
       } catch (error) {
         console.error('Failed to submit check-in:', error);
         Alert.alert('Error', 'Failed to submit check-in.');
@@ -159,6 +186,32 @@ const HomeScreen = () => {
   console.log('Pending Quests:', pendingQuests);
 
   console.log('Checkins: ', checkins);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#444" />
+          <Text>Loading...</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.errorContainer}>
+          <Text>Something went wrong.</Text>
+          <Text>{error}</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -413,7 +466,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     width: '80%',
@@ -460,7 +513,35 @@ const styles = StyleSheet.create({
     color: '#444',
     borderWidth: 1,
     borderRadius: 5,
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  text: {
+    fontSize: 16,
+    color: '#333',
+    marginVertical: 10,
+  },
+  button: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    backgroundColor: '#333',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
 });
 
 export default HomeScreen;

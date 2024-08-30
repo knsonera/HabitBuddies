@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, Modal, Dimensions, TextInput } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, Modal, Dimensions, TextInput, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -52,6 +52,9 @@ const QuestScreen = ({ route }) => {
   const [checkIns, setCheckIns] = useState([]);
   const [checkedIn, setCheckedIn] = useState(false);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const parseDuration = (duration) => {
     const [amount, unit] = duration.split(' ');
 
@@ -90,6 +93,8 @@ const QuestScreen = ({ route }) => {
   };
 
   useEffect(() => {
+    setLoading(true);
+
     const loadData = async () => {
       try {
         // Fetch the quest owner ID
@@ -129,6 +134,8 @@ const QuestScreen = ({ route }) => {
       } catch (error) {
         console.error('Failed to load quest data:', error);
         Alert.alert('Error', 'Failed to load quest data.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -167,6 +174,8 @@ const QuestScreen = ({ route }) => {
   };
 
   const handleVideoPress = (zoom_link) => {
+    console.log(questDetails);
+    console.log(zoom_link);
     if (zoom_link) {
       Linking.openURL(zoom_link).catch(err => console.error("Failed to open link: ", err));
     } else {
@@ -311,6 +320,32 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Error', 'Failed to invite friend.');
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#444" />
+          <Text>Loading...</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.errorContainer}>
+          <Text>Something went wrong.</Text>
+          <Text>{error}</Text>
+        </View>
+        <Footer />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -947,6 +982,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  text: {
+    fontSize: 16,
+    color: '#333',
+    marginVertical: 10,
   },
 });
 
