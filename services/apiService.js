@@ -117,6 +117,20 @@ export const fetchUserInfo = async (userId = null) => {
     return requestWithAuth(`/users/${id}`, 'GET');
 };
 
+export const updateUserProfile = async (userId, updatedData) => {
+    if (!userId) {
+        throw new Error('User ID is required');
+    }
+
+    try {
+        const response = await requestWithAuth(`/users/${userId}`, 'PUT', updatedData);
+        return response;
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+    }
+};
+
 export const createQuest = async (questData, refreshQuests) => {
     try {
         const newQuest = await requestWithAuth('/quests', 'POST', questData);
@@ -140,17 +154,20 @@ export const editQuest = async (questData) => {
 
 export const endQuest = async (questId) => {
     try {
-        // Fetch the current quest data
-        const questData = await request(`/quests/${questId}`, 'GET');
+        // Send the request to the new endpoint that marks the quest as completed
+        const response = await requestWithAuth(`/quests/${questId}/end`, 'PUT');
+        return response;
+    } catch (error) {
+        console.error('Failed to end the quest:', error);
+        throw error;
+    }
+};
 
-        // Update the status and updated_at fields
-        const updatedQuestData = {
-            ...questData,
-            status: 'completed',
-            updated_at: new Date().toISOString(),
-        };
-
-        return requestWithAuth(`/quests/${questId}`, 'PUT', updatedQuestData);
+export const completeQuest = async (questId) => {
+    try {
+        // Send the request to the new endpoint that marks the quest as completed
+        const response = await requestWithAuth(`/quests/${questId}/complete`, 'PUT');
+        return response;
     } catch (error) {
         console.error('Failed to end the quest:', error);
         throw error;
@@ -165,6 +182,16 @@ export const fetchUserQuests = async (userId = null) => {
     }
     console.log('fetching user quests');
     return requestWithAuth(`/users/${id}/quests`, 'GET');
+};
+
+// Fetch past user quests
+export const fetchPastUserQuests = async (userId = null) => {
+    const id = userId || await getUserId();
+    if (!id) {
+        throw new Error('User ID is required');
+    }
+    console.log('fetching past user quests');
+    return requestWithAuth(`/users/${id}/quests/past`, 'GET');
 };
 
 // Fetch users for quest

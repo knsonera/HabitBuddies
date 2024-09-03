@@ -6,10 +6,10 @@
     "duration": "30 days",
     "checkin_frequency": "daily",
     "time": "anytime",
-    "icon_id": 1,
+    "icon_id": 17,
     "start_date": "2023-07-01",
     "end_date": "2023-07-31",
-    "category_id": 1,
+    "category_id": 1
   },
   {
     "quest_id": 2,
@@ -21,7 +21,7 @@
     "icon_id": 2,
     "start_date": "2023-07-01",
     "end_date": "2023-07-28",
-    "category_id": 2,
+    "category_id": 2
   },
   {
     "quest_id": 3,
@@ -34,7 +34,7 @@
     "icon_id": 3,
     "start_date": "2023-07-01",
     "end_date": "2023-07-21",
-    "category_id": 3,
+    "category_id": 3
   },
   {
     "quest_id": 4,
@@ -44,10 +44,10 @@
     "checkin_frequency": "daily",
     "time": "anytime",
     "zoom_link": "https://zoom.us/j/4444444444",
-    "icon_id": 4,
+    "icon_id": 7,
     "start_date": "2023-07-01",
     "end_date": "2023-07-10",
-    "category_id": 4,
+    "category_id": 4
   },
   {
     "quest_id": 5,
@@ -57,10 +57,10 @@
     "checkin_frequency": "daily",
     "time": "morning",
     "zoom_link": "https://zoom.us/j/5555555555",
-    "icon_id": 5,
+    "icon_id": 4,
     "start_date": "2023-07-01",
     "end_date": "2023-07-15",
-    "category_id": 5,
+    "category_id": 5
   },
   {
     "quest_id": 6,
@@ -70,10 +70,10 @@
     "checkin_frequency": "daily",
     "time": "evening",
     "zoom_link": "https://zoom.us/j/6666666666",
-    "icon_id": 6,
+    "icon_id": 14,
     "start_date": "2023-07-01",
     "end_date": "2023-07-30",
-    "category_id": 6,
+    "category_id": 6
   },
   {
     "quest_id": 7,
@@ -83,10 +83,10 @@
     "checkin_frequency": "daily",
     "time": "anytime",
     "zoom_link": "https://zoom.us/j/7777777777",
-    "icon_id": 7,
+    "icon_id": 6,
     "start_date": "2023-07-01",
     "end_date": "2023-07-07",
-    "category_id": 7,
+    "category_id": 7
   },
   {
     "quest_id": 8,
@@ -96,10 +96,10 @@
     "checkin_frequency": "daily",
     "time": "anytime",
     "zoom_link": "https://zoom.us/j/8888888888",
-    "icon_id": 8,
+    "icon_id": 54,
     "start_date": "2023-07-01",
     "end_date": "2023-07-30",
-    "category_id": 8,
+    "category_id": 8
   },
   {
     "quest_id": 9,
@@ -112,7 +112,7 @@
     "icon_id": 9,
     "start_date": "2023-07-01",
     "end_date": "2023-07-14",
-    "category_id": 9,
+    "category_id": 9
   },
   {
     "quest_id": 10,
@@ -122,10 +122,10 @@
     "checkin_frequency": "daily",
     "time": "anytime",
     "zoom_link": "https://zoom.us/j/1010101010",
-    "icon_id": 10,
+    "icon_id": 11,
     "start_date": "2023-07-01",
     "end_date": "2023-07-07",
-    "category_id": 10,
+    "category_id": 10
   },
   {
     "quest_id": 11,
@@ -135,10 +135,10 @@
     "checkin_frequency": "daily",
     "time": "anytime",
     "zoom_link": "https://zoom.us/j/1111111111",
-    "icon_id": 11,
+    "icon_id": 12,
     "start_date": "2023-07-01",
     "end_date": "2023-07-05",
-    "category_id": 11,
+    "category_id": 11
   },
   {
     "quest_id": 12,
@@ -148,10 +148,10 @@
     "checkin_frequency": "daily",
     "time": "morning",
     "zoom_link": "https://zoom.us/j/1212121212",
-    "icon_id": 12,
+    "icon_id": 13,
     "start_date": "2023-07-01",
     "end_date": "2023-07-15",
-    "category_id": 12,
+    "category_id": 12
   },
   {
     "quest_id": 13,
@@ -161,10 +161,10 @@
     "checkin_frequency": "daily",
     "time": "evening",
     "zoom_link": "https://zoom.us/j/1313131313",
-    "icon_id": 13,
+    "icon_id": 4,
     "start_date": "2023-07-01",
     "end_date": "2023-07-10",
-    "category_id": 13,
+    "category_id": 13
   },
   {
     "quest_id": 14,
@@ -174,10 +174,10 @@
     "checkin_frequency": "daily",
     "time": "morning",
     "zoom_link": "https://zoom.us/j/1414141414",
-    "icon_id": 14,
+    "icon_id": 5,
     "start_date": "2023-07-01",
     "end_date": "2023-07-31",
-    "category_id": 14,
+    "category_id": 14
   },
   {
     "quest_id": 15,
@@ -187,10 +187,10 @@
     "checkin_frequency": "daily",
     "time": "evening",
     "zoom_link": "https://zoom.us/j/1515151515",
-    "icon_id": 15,
+    "icon_id": 7,
     "start_date": "2023-07-01",
     "end_date": "2023-07-07",
-    "category_id": 15,
+    "category_id": 15
   },
   {
     "quest_id": 16,
@@ -200,10 +200,10 @@
     "checkin_frequency": "daily",
     "time": "evening",
     "zoom_link": "https://zoom.us/j/1616161616",
-    "icon_id": 16,
+    "icon_id": 60,
     "start_date": "2023-07-01",
     "end_date": "2023-08-30",
-    "category_id": 16,
+    "category_id": 16
   },
   {
     "quest_id": 17,
@@ -213,9 +213,9 @@
     "checkin_frequency": "daily",
     "time": "anytime",
     "zoom_link": "https://zoom.us/j/1717171717",
-    "icon_id": 17,
+    "icon_id": 52,
     "start_date": "2023-07-01",
     "end_date": "2023-07-30",
-    "category_id": 17,
+    "category_id": 17
   }
 ]

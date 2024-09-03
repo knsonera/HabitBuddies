@@ -20,7 +20,8 @@ const QuestTemplatesScreen = () => {
   }, []);
 
   const renderIcon = (icon_id) => {
-    const icon = iconsData.icons[icon_id] || { name: "star", library: "FontAwesome" };
+    // Find the icon by matching the id from the quest
+    const icon = iconsData.icons.find(icon => icon.id === icon_id) || { name: "star", library: "FontAwesome" };
 
     switch (icon.library) {
       case 'FontAwesome':

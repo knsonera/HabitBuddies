@@ -155,6 +155,9 @@ const QuestScreen = ({ route }) => {
 
   }, [questDetails.quest_id, questDetails.start_date, questDetails.duration, currentUserId]);
 
+  // This condition determines if the timeline is complete
+  const isTimelineComplete = daysPassed >= totalDays;
+
   const icon = iconsData.icons[questDetails.icon_id];
 
   const handleParticipantsPress = async (quest_id) => {
@@ -240,6 +243,17 @@ const QuestScreen = ({ route }) => {
       setConfirmationVisible(false); // Hide confirmation modal
     }
   };
+
+  const handleCompletePress = async () => {
+    try {
+      await completeQuest(questDetails.quest_id);
+      Alert.alert('Yay!', 'Quest is complete.');
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('Failed to complete the quest:', error);
+      Alert.alert('Error', 'Failed to complete the quest.');
+    }
+  }
 
   const handleRequestToJoin = async () => {
     console.log('Requesting to join quest with ID:', questDetails.quest_id);
@@ -384,27 +398,39 @@ const QuestScreen = ({ route }) => {
           <View style={styles.buttonContainer}>
             {userRole === 'owner' || (userRole === 'participant' && userStatus === 'active') ? (
               <>
-                <TouchableOpacity
-                  style={[
-                    styles.button,
-                    checkedIn && { backgroundColor: '#CCFFCC' }
-                  ]}
-                  onPress={() => !checkedIn && handleCheckinPress(questDetails.quest_id)}
-                  disabled={checkedIn}
-                >
-                  <MaterialCommunityIcons name="check" size={20} color="#000" />
-                  {checkedIn ? (
-                    <Text style={styles.buttonText}>Checked in</Text>
-                  ) : (
-                    <Text style={styles.buttonText}>Check in</Text>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id, questDetails.quest_name)}>
-                  <MaterialCommunityIcons name="chat" size={20} color="#000" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => handleVideoPress(questDetails.zoom_link)}>
-                  <MaterialCommunityIcons name="video" size={20} color="#000" />
-                </TouchableOpacity>
+                {isTimelineComplete && userRole === 'owner' ? (
+                  <TouchableOpacity
+                    style={styles.completeButton}
+                    onPress={handleCompletePress}
+                  >
+                    <MaterialCommunityIcons name="check-circle" size={20} color="#000" />
+                    <Text style={styles.buttonText}>Complete the Quest</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      style={[
+                        styles.button,
+                        checkedIn && { backgroundColor: '#CCFFCC' }
+                      ]}
+                      onPress={() => !checkedIn && handleCheckinPress(questDetails.quest_id)}
+                      disabled={checkedIn}
+                    >
+                      <MaterialCommunityIcons name="check" size={20} color="#000" />
+                      {checkedIn ? (
+                        <Text style={styles.buttonText}>Checked in</Text>
+                      ) : (
+                        <Text style={styles.buttonText}>Check in</Text>
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button} onPress={() => handleChatPress(questDetails.quest_id, questDetails.quest_name)}>
+                      <MaterialCommunityIcons name="chat" size={20} color="#000" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button} onPress={() => handleVideoPress(questDetails.zoom_link)}>
+                      <MaterialCommunityIcons name="video" size={20} color="#000" />
+                    </TouchableOpacity>
+                  </>
+                )}
               </>
             ) : userStatus === 'pending' ? (
               <Text style={styles.pendingText}>Request Sent</Text>
@@ -433,19 +459,21 @@ const QuestScreen = ({ route }) => {
           </View>
 
           {/* Progress Bar */}
-          <View style={styles.progressBarContainer}>
-            <Text style={styles.detailsText}>Quest Timeline</Text>
-            <ProgressBar
-              progress={progress / 100}
-              width={width * 0.9}
-              color="#4CAF50"
-              unfilledColor="#E0E0E0"
-              borderWidth={0}
-              borderRadius={5}
-              height={10}
-            />
-            <Text style={styles.detailsText}>{`${daysPassed.toFixed(0)} out of ${totalDays.toFixed(0)} days`}</Text>
-          </View>
+          {!isTimelineComplete && (
+            <View style={styles.progressBarContainer}>
+              <Text style={styles.detailsText}>Quest Timeline</Text>
+              <ProgressBar
+                progress={progress / 100}
+                width={width * 0.9}
+                color="#4CAF50"
+                unfilledColor="#E0E0E0"
+                borderWidth={0}
+                borderRadius={5}
+                height={10}
+              />
+              <Text style={styles.detailsText}>{`${daysPassed.toFixed(0)} out of ${totalDays.toFixed(0)} days`}</Text>
+            </View>
+          )}
 
           <View style={styles.detailsContainer}>
             <Text style={styles.sectionTitle}>Quest Information</Text>

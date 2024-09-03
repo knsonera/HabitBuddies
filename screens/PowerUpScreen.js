@@ -10,7 +10,23 @@ import Footer from '../components/Footer';
 
 const PowerUpScreen = () => {
   const route = useRoute();
-  const [powerUps, setPowerUps] = useState(route.params.powerUps);
+  const [powerUps, setPowerUps] = useState(route.params?.powerUps || null);
+
+  useEffect(() => {
+    const loadPowerUps = async () => {
+      if (!powerUps) {
+        try {
+          const fetchedPowerUps = await fetchPowerUps();
+          setPowerUps(fetchedPowerUps);
+        } catch (error) {
+          console.error('Error fetching power-ups:', error);
+          Alert.alert('Error', 'Failed to fetch power-ups');
+        }
+      }
+    };
+
+    loadPowerUps();
+  }, [powerUps]);
 
   const handleMarkAsRead = async (powerUpId) => {
     try {
@@ -30,7 +46,7 @@ const PowerUpScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Your Power-Ups</Text>
-          {powerUps.length === 0 ? (
+          {!powerUps || powerUps.length === 0 ? (
             <Text style={styles.noPowerUps}>No power-ups available.</Text>
           ) : (
             powerUps.map((powerUp) => (

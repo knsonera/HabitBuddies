@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList, ActivityIndicator, TextInput } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
@@ -9,7 +9,7 @@ import avatarsData from '../assets/avatars.json'; // Import the local JSON file
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { fetchUserInfo, fetchUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender, fetchUserFriends, acceptQuestInvite, declineQuestInvite } from '../services/apiService';
+import { fetchUserInfo, updateUserProfile, fetchUserQuests, fetchPastUserQuests, requestFriendship, approveFriendship, removeFriendship, fetchFriendshipStatus, fetchFriendshipSender, fetchUserFriends, acceptQuestInvite, declineQuestInvite } from '../services/apiService';
 
 
 const ProfileScreen = ({ route, navigation }) => {
@@ -22,11 +22,16 @@ const ProfileScreen = ({ route, navigation }) => {
   const [userQuests, setUserQuests] = useState({ current: [], past: [] });
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [confirmationVisible, setConfirmationVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isFriendRequestToCurrentUser, setIsFriendRequestToCurrentUser] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
   const [error, setError] = useState(null);
+
+  const [editMode, setEditMode] = useState(false);
+  const [updatedFullname, setUpdatedFullname] = useState('');
+  const [updatedUsername, setUpdatedUsername] = useState('');
 
   const checkFriendshipStatus = async () => {
     try {
@@ -71,15 +76,15 @@ const ProfileScreen = ({ route, navigation }) => {
       setUserProfile(data);
       setIsCurrentUser(routeUserId == currentUserId);
 
-      const questsData = await fetchUserQuests(userIdToFetch);
-      console.log(questsData);
+      setUpdatedFullname(data.fullname);
+      setUpdatedUsername(data.username);
 
-      const currentQuests = questsData.filter(quest => quest.status === 'active');
-      const pastQuests = questsData.filter(quest => quest.status === 'completed' || quest.status === 'dropped');
+      const questsData = await fetchUserQuests(userIdToFetch);
+      const pastQuestsData = await fetchPastUserQuests(userIdToFetch);
 
       setUserQuests({
-        current: currentQuests || [],
-        past: pastQuests || [],
+        current: questsData || [],
+        past: pastQuestsData || [],
       });
 
     } catch (error) {
@@ -89,6 +94,64 @@ const ProfileScreen = ({ route, navigation }) => {
       setLoading(false);
     }
   };
+
+  // Callback to handle text input changes
+  const handleFullnameChange = useCallback((text) => {
+    setUpdatedFullname(text);
+  }, []);
+
+  const handleUsernameChange = useCallback((text) => {
+    setUpdatedUsername(text);
+  }, []);
+
+  const handleSaveProfile = async () => {
+      console.log('Save button pressed');
+      try {
+          const updatedData = {
+              fullname: updatedFullname,
+              username: updatedUsername,
+              email: userProfile.email,
+              avatar_id: userProfile.avatar_id,
+          };
+
+          // Call the API to update the profile
+          const response = await updateUserProfile(userIdToFetch, updatedData);
+
+          // Log the response to see what is returned
+          console.log(response);
+
+          // Since the response already contains the updated data, no need to check response.ok or call response.json()
+          console.log('Profile updated successfully:', response);
+
+          // Update the local state with the new profile data
+          setUserProfile((prevState) => ({
+              ...prevState,
+              fullname: response.fullname,
+              username: response.username,
+          }));
+
+          // Update the input fields to reflect the new profile data
+          setUpdatedFullname(response.fullname);
+          setUpdatedUsername(response.username);
+
+          setEditMode(false);
+
+      } catch (error) {
+          console.error('Failed to update profile:', error);
+      }
+    };
+
+  const renderEditButton = () => (
+    <TouchableOpacity style={styles.settingsButton} onPress={() => setEditMode(true)}>
+      <Icon name="cog" size={16} color="#000000" />
+    </TouchableOpacity>
+  );
+
+  const renderSaveButton = () => (
+    <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+      <Icon name="check" size={16} color="#000000" />
+    </TouchableOpacity>
+  );
 
   const getProfileContent = async () => {
     try {
@@ -104,7 +167,6 @@ const ProfileScreen = ({ route, navigation }) => {
 
     } catch (error) {
         console.error('Error loading data:', error);
-        // Optionally handle the error or set loading to false
     } finally {
         // Set loading to false after all promises resolve or reject
         setLoading(false);
@@ -125,6 +187,12 @@ const ProfileScreen = ({ route, navigation }) => {
     }
   }, [modalVisible, userIdToFetch]);
 
+  useEffect(() => {
+    if (friendshipStatus) {
+      getProfileContent();
+    }
+  }, [friendshipStatus]);
+
   const getAvatarUrl = (avatarId) => {
     const avatar = avatarsData.avatars.find((a) => a.id === avatarId);
     return avatar ? avatar.url : null;
@@ -138,6 +206,8 @@ const ProfileScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error requesting friendship:', error);
+    } finally {
+      getProfileContent();
     }
   };
 
@@ -149,10 +219,16 @@ const ProfileScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error approving friendship:', error);
+    } finally {
+      getProfileContent();
     }
   };
 
-  const handleRemoveFriend = async () => {
+  const handleRemoveFriend = () => {
+    setConfirmationVisible(true);
+  };
+
+  const confirmRemoveFriend = async () => {
     try {
       const response = await removeFriendship(userIdToFetch);
       if (response.status === 200) {
@@ -160,6 +236,9 @@ const ProfileScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error removing friendship:', error);
+    } finally {
+      setConfirmationVisible(false);
+      getProfileContent();
     }
   };
 
@@ -172,9 +251,15 @@ const ProfileScreen = ({ route, navigation }) => {
               <Icon name="user-plus" size={16} color="#000000" /> Find Friends
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Icon name="cog" size={16} color="#000000" />
-          </TouchableOpacity>
+          {editMode ? (
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+              <Icon name="check" size={16} color="#000000" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.settingsButton} onPress={() => setEditMode(true)}>
+              <Icon name="cog" size={16} color="#000000" />
+            </TouchableOpacity>
+          )}
         </View>
       );
     }
@@ -278,8 +363,27 @@ const ProfileScreen = ({ route, navigation }) => {
           <View>
             <View style={styles.topSection}>
               <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-              <Text style={styles.fullName}>{userProfile.fullname}</Text>
-              <Text style={styles.login}>{userProfile.username}</Text>
+                {editMode ? (
+                  <>
+                    <TextInput
+                      style={styles.input}
+                      value={updatedFullname}
+                      onChangeText={setUpdatedFullname}
+                      placeholder="Full Name"
+                    />
+                    <TextInput
+                      style={styles.input}
+                      value={updatedUsername}
+                      onChangeText={setUpdatedUsername}
+                      placeholder="Username"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.fullName}>{userProfile.fullname}</Text>
+                    <Text style={styles.login}>{userProfile.username}</Text>
+                  </>
+                )}
 
               {renderFriendshipButton()}
 
@@ -310,16 +414,15 @@ const ProfileScreen = ({ route, navigation }) => {
               <Text style={styles.noQuestsText}>No past quests</Text>
             ) : (
               <FlatList
-                data={userQuests.past}
-                keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.questItem}
-                    onPress={() => navigation.navigate('QuestDetails', { questId: item.id })}
-                  >
-                    <Text style={styles.questText}>{item.title}</Text>
-                  </TouchableOpacity>
-                )}
+                  data={userQuests.past}
+                  keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.questItem} disabled={true}>
+                      <View style={styles.questInfo}>
+                        <Text style={styles.questTitle}>{item.quest_name}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
               />
             )}
           </View>
@@ -364,6 +467,33 @@ const ProfileScreen = ({ route, navigation }) => {
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal
+        transparent={true}
+        visible={confirmationVisible}
+        onRequestClose={() => setConfirmationVisible(false)}
+      >
+        <View style={styles.confirmationModalContainer}>
+          <View style={styles.confirmationModalContent}>
+            <Text style={styles.confirmationText}>Are you sure you want to remove this friend?</Text>
+            <View style={styles.confirmationButtonsContainer}>
+              <TouchableOpacity
+                style={styles.confirmationButton}
+                onPress={confirmRemoveFriend}
+              >
+                <Text style={styles.buttonText}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmationButton, styles.cancelButton]}
+                onPress={() => setConfirmationVisible(false)}
+              >
+                <Text style={styles.buttonText}>No</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -670,6 +800,70 @@ const styles = StyleSheet.create({
     color: '#999999',
     textAlign: 'center',
     marginVertical: 20,
+  },
+
+  confirmationModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  confirmationModalContent: {
+    width: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  confirmationText: {
+    fontSize: 18,
+    color: '#000',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  confirmationButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  confirmationButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#ff5c5c',
+  },
+  buttonText: {
+    color: '#000000',
+    fontSize: 14,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    width: '80%',
+    alignSelf: 'center',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    backgroundColor: '#ccffcc',
+    flex: 1,
+    marginHorizontal: 5,
+    justifyContent: 'center',
   },
 });
 

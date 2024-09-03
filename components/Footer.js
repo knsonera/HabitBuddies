@@ -23,7 +23,7 @@ const Footer = ({ hasUnreadPowerUps, powerUps }) => {
         <TouchableOpacity onPress={() => navigation.navigate('StartQuest')}>
           <MaterialCommunityIcons name="plus" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('PowerUp', { powerUps })}>
+        <TouchableOpacity onPress={() => navigation.navigate('PowerUp', { powerUps: powerUps ?? null })}>
           <MaterialCommunityIcons name="heart" size={30} color={hasUnreadPowerUps ? "red" : "#000"} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId })}>

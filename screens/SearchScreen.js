@@ -66,8 +66,6 @@ const SearchScreen = () => {
                     <ActivityIndicator size="large" color="#0000ff" />
                 ) : error ? (
                     <Text style={styles.errorText}>{error}</Text>
-                ) : searchResults.length === 0 && searchQuery !== '' ? (
-                    <Text style={styles.notFoundText}>Not users found, try again</Text>
                 ) : (
                     <FlatList
                         data={searchResults}
