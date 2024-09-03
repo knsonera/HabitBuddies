@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect, useContext } from 'react';
 
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { markAsReadPowerUp } from '../services/apiService';
+import { markAsReadPowerUp, fetchPowerUps } from '../services/apiService';
 
 import { useRoute } from '@react-navigation/native';
 import Header from '../components/Header';
