@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { fetchUserQuests, fetchUserInfo, acceptQuestInvite, declineQuestInvite, createCheckIn, fetchUserCheckInsToday, fetchPowerUps } from '../services/apiService';
@@ -14,7 +14,7 @@ const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedQuest, setSelectedQuest] = useState(null);
   const navigation = useNavigation();
-  const { userId, userInfo, refreshTokens } = useContext(AuthContext);
+  const { userId, logOut, userInfo, refreshTokens } = useContext(AuthContext);
 
   const [quests, setQuests] = useState([]);
   const [badges, setBadges] = useState([]);
@@ -26,85 +26,83 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Load user data
   const loadUserData = async () => {
+    if (!userId) return;
+
     try {
       await refreshTokens();
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      Alert.alert('Error', 'Session expired. Please log in again.');
+      navigation.navigate('Welcome');
     }
   };
 
+  // Load user checkins
   const loadTodayCheckIns = async () => {
     try {
       const todayCheckIns = await fetchUserCheckInsToday(userId);
-      console.log(todayCheckIns);
       setCheckins(todayCheckIns);
     } catch (error) {
-      console.error('Failed to load today\'s check-ins:', error);
+      Alert.alert('Error', 'Failed to load today\'s check-ins.');
     }
   };
 
+  // Load user quests
   const loadUserQuests = async () => {
     try {
         const userQuests = await fetchUserQuests(userId);
-        console.log('Fetched Quests:', userQuests);
         setQuests(userQuests);
     } catch (error) {
-        console.error('Failed to load user quests:', error);
+        Alert.alert('Error', 'Failed to load user quests.');
     }
   };
 
+  // Load powerups
   const loadPowerUps = async () => {
     try {
       const data = await fetchPowerUps();
-      console.log('Unread Power-Ups:', data);
       setPowerUps(data);
       setHasUnreadPowerUps(data.length > 0); // Update the state based on unread power-ups
     } catch (error) {
-      console.error('Failed to fetch power-ups:', error);
+      Alert.alert('Error', 'Failed to fetch power-ups.');
     }
   };
 
+  // Bringing all previous functions together
   const loadData = async () => {
-    try {
-        // Set loading to true at the beginning
-        setLoading(true);
+    if (!userId) return; // If the user is logged out, stop everything
 
-        // Await all data-loading functions
+    setLoading(true);
+    try {
+        await refreshTokens();
+        // Wait for all data-loading functions
         await Promise.all([
             loadUserData(),
             loadTodayCheckIns(),
             loadUserQuests(),
             loadPowerUps()
         ]);
-
     } catch (error) {
-        console.error('Error loading data:', error);
-        // Optionally handle the error or set loading to false
+        Alert.alert('Error', 'Failed to load data.');
+        setError('Failed to load data.');
     } finally {
         // Set loading to false after all promises resolve or reject
         setLoading(false);
     }
   };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData(); // Load power-ups when the screen is focused
-    }, [userId])
-  );
-
+  // Reload data if user id changes
   useEffect(() => {
-    loadUserData();
-  }, [userId]); // This will run every time userId changes
+    loadData();
+  }, [userId]);
 
-  useEffect(() => {
-    loadUserQuests();
-  }, [userId]); // This will run every time userId changes
-
-  const getIconById = (iconId) => {
+  // Icons
+  const getIconById = useCallback((iconId) => {
     return iconsData.icons[iconId];
-  };
+  }, []);
 
+  // Check-ins
   const handleCheckInSubmit = async () => {
     if (selectedQuest && comment.trim()) {
       try {
@@ -118,7 +116,7 @@ const HomeScreen = () => {
         // Refresh quests
         await loadUserQuests();
       } catch (error) {
-        console.error('Failed to submit check-in:', error);
+        //console.error('Failed to submit check-in:', error);
         Alert.alert('Error', 'Failed to submit check-in.');
       }
     } else {
@@ -131,62 +129,66 @@ const HomeScreen = () => {
     setModalVisible(true);
   };
 
+  // Navigate to quest
   const handleQuestPress = (quest) => {
     navigation.navigate('Quest', { questDetails: quest });
   };
 
+  // Quest invites
+  // Accept
   const handleAcceptInvite = async (quest_id) => {
     try {
         await acceptQuestInvite(quest_id);
         Alert.alert('Success', 'You have joined the quest.');
         loadUserQuests(); // Refresh the quests after declining
-
     } catch (error) {
-        console.error('Failed to accept invite:', error);
         Alert.alert('Error', 'Failed to accept invite.');
     }
   };
 
+  // Decline
   const handleDeclineInvite = async (quest_id) => {
     try {
         await declineQuestInvite(quest_id);
         Alert.alert('Success', 'You have declined the quest invite.');
         loadUserQuests();
-
     } catch (error) {
-        console.error('Failed to decline invite:', error);
         Alert.alert('Error', 'Failed to decline invite.');
     }
   };
 
+  // Create new quest
   const handleQuestCreation = async (questData) => {
+    if (!questName.trim()) {
+      Alert.alert('Error', 'Quest name cannot be empty.');
+      return;
+    }
+
     try {
-        await createQuest(questData, loadUserQuests);  // Refresh quests list after creating a new quest
-        Alert.alert('Success', 'Quest created.');
-        loadUserQuests();
+      await createQuest({ name: questName, userId });
+      Alert.alert('Success', 'Quest created successfully.');
+      navigation.navigate('Home'); // Navigate back to Home after creating the quest
     } catch (error) {
-        console.error('Error creating quest:', error);
+      Alert.alert('Error', 'Failed to create quest.');
     }
   };
 
+  // Navigate to New Quest screen
   const handleStartQuestPress = () => {
       navigation.navigate('NewQuest', { onCreateQuest: handleQuestCreation });
   };
 
+  // Check-in availability
   const hasCheckedInToday = (questId) => {
     return checkins.some(checkin => checkin.quest_id === questId);
   };
 
+  // Filter quests by status
   const activeQuests = quests.filter(quest => quest.user_status === 'active');
   const pendingQuests = quests.filter(quest => quest.user_status === 'pending');
   const invitedQuests = quests.filter(quest => quest.user_status === 'invited');
 
-  console.log('Invited Quests:', invitedQuests);
-  console.log('Active Quests:', activeQuests);
-  console.log('Pending Quests:', pendingQuests);
-
-  console.log('Checkins: ', checkins);
-
+  // Loading layout
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -200,6 +202,7 @@ const HomeScreen = () => {
     );
   }
 
+  // Error layout
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -335,7 +338,6 @@ const HomeScreen = () => {
 
               {/* Title */}
               <Text style={styles.modalTitle}>Checking-in</Text>
-
               <Text style={styles.modalDateTime}>{selectedQuest.quest_name}</Text>
 
               {/* Current Date and Time */}

@@ -16,21 +16,66 @@ const WelcomeScreen = () => {
   const { logInUser, signUpUser } = useContext(AuthContext);
   const navigation = useNavigation();
 
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isValidPassword = (password) => {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  const isValidName = (name) => {
+    return name.length > 4;
+  };
+
   const handleLogin = async () => {
-    console.log('handling login on welcome screen');
+    if (!isValidEmail(email)) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      setErrorMessage('Password must be at least 8 characters long and contain letters, numbers, and special characters.');
+      return;
+    }
+
     try {
       await logInUser(email, password);
-      console.log('Login successful, navigating to Home');
       navigation.navigate('Home');
       setLoginModalVisible(false);
     } catch (error) {
-      console.error('Login error:', error.message);
       setErrorMessage(error.message);
     }
   };
 
   const handleSignUp = async () => {
-    console.log('handling sign up on welcome screen');
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    const trimmedUsername = username.trim();
+    const trimmedFullname = fullname.trim();
+
+    if (!isValidEmail(trimmedEmail)) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    if (!isValidPassword(trimmedPassword)) {
+      setErrorMessage('Password must be at least 8 characters long and contain letters, numbers, and special characters.');
+      return;
+    }
+
+    if (!isValidName(trimmedUsername)) {
+      setErrorMessage('Username must be longer than 4 characters.');
+      return;
+    }
+
+    if (!isValidName(trimmedFullname)) {
+      setErrorMessage('Full name must be longer than 4 characters.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match.');
       return;
@@ -38,11 +83,10 @@ const WelcomeScreen = () => {
 
     try {
       await signUpUser(email, password, username, fullname);
-      console.log('Sign-up successful, navigating to Home');
       navigation.navigate('Home');
       setSignUpModalVisible(false);
+      resetSignUpForm();
     } catch (error) {
-      console.error('Sign-up error:', error.message);
       setErrorMessage(error.message);
     }
   };

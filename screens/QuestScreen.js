@@ -24,9 +24,9 @@ const QuestScreen = ({ route }) => {
   useEffect(() => {
     const verifyUserId = async () => {
       const id = await getUserId();
-      console.log('Retrieved user ID:', id);
+      //console.log('Retrieved user ID:', id);
       if (!id) {
-        console.error('User ID could not be retrieved.');
+        //console.error('User ID could not be retrieved.');
         Alert.alert('Error', 'User ID could not be retrieved.');
         return; // Stop further actions if user ID is missing
       }
@@ -129,7 +129,7 @@ const QuestScreen = ({ route }) => {
         setCheckIns(questCheckIns);
 
         const isCheckedIn = await fetchUserCheckInsForQuestToday(questDetails.quest_id, currentUserId);
-        console.log("is checked in? ", isCheckedIn.length);
+        //console.log("is checked in? ", isCheckedIn.length);
         setCheckedIn(isCheckedIn.length > 0);
 
         const currentUser = questParticipants.find(p => p.user_id === currentUserId);
@@ -144,7 +144,7 @@ const QuestScreen = ({ route }) => {
         }
 
       } catch (error) {
-        console.error('Failed to load quest data:', error);
+        //console.error('Failed to load quest data:', error);
         Alert.alert('Error', 'Failed to load quest data.');
       } finally {
         setLoading(false);
@@ -175,7 +175,7 @@ const QuestScreen = ({ route }) => {
           setParticipants(sortedParticipants);
           setModalVisible(true);
       } catch (error) {
-          console.error('Failed to fetch participants:', error);
+          //console.error('Failed to fetch participants:', error);
           Alert.alert('Error', 'Failed to fetch participants.');
       }
   };
@@ -189,8 +189,8 @@ const QuestScreen = ({ route }) => {
   };
 
   const handleVideoPress = (zoom_link) => {
-    console.log(questDetails);
-    console.log(zoom_link);
+    //console.log(questDetails);
+    //console.log(zoom_link);
     if (zoom_link) {
       Linking.openURL(zoom_link).catch(err => console.error("Failed to open link: ", err));
     } else {
@@ -215,7 +215,7 @@ const QuestScreen = ({ route }) => {
             setCheckinModalVisible(false); // Close the modal after submission
             setComment(''); // Clear the comment field
         } catch (error) {
-            console.error('Failed to submit check-in:', error);
+            //console.error('Failed to submit check-in:', error);
             if (error.message.includes('You have already checked in today')) {
                 Alert.alert('Duplicate Check-In', 'You have already checked in today for this quest.');
             } else {
@@ -237,7 +237,7 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Success', 'Quest has been ended.');
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Failed to end the quest:', error);
+      //console.error('Failed to end the quest:', error);
       Alert.alert('Error', 'Failed to end the quest.');
     } finally {
       setConfirmationVisible(false); // Hide confirmation modal
@@ -250,17 +250,17 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Yay!', 'Quest is complete.');
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Failed to complete the quest:', error);
+      //console.error('Failed to complete the quest:', error);
       Alert.alert('Error', 'Failed to complete the quest.');
     }
   }
 
   const handleRequestToJoin = async () => {
-    console.log('Requesting to join quest with ID:', questDetails.quest_id);
-    console.log('Current user ID:', currentUserId);
+    //console.log('Requesting to join quest with ID:', questDetails.quest_id);
+    //console.log('Current user ID:', currentUserId);
 
     if (!questDetails.quest_id || !currentUserId) {
-        console.error('Missing required data: questId or userId');
+        //console.error('Missing required data: questId or userId');
         Alert.alert('Error', 'Missing required data.');
         return;
     }
@@ -270,7 +270,7 @@ const QuestScreen = ({ route }) => {
         Alert.alert('Success', 'Request to join the quest has been sent.');
         setUserStatus('pending'); // Set the status to 'pending' after request is sent
     } catch (error) {
-        console.error('Failed to send request to join:', error);
+        //console.error('Failed to send request to join:', error);
         Alert.alert('Error', 'Failed to send request to join.');
     }
   };
@@ -283,7 +283,7 @@ const QuestScreen = ({ route }) => {
       const updatedParticipants = await fetchQuestParticipants(questId);
       setParticipants(updatedParticipants);
     } catch (error) {
-      console.error('Failed to approve participant:', error);
+      //console.error('Failed to approve participant:', error);
       Alert.alert('Error', 'Failed to approve participant.');
     }
   };
@@ -296,7 +296,7 @@ const QuestScreen = ({ route }) => {
       const updatedParticipants = await fetchQuestParticipants(questId);
       setParticipants(updatedParticipants);
     } catch (error) {
-      console.error('Failed to remove participant:', error);
+      //console.error('Failed to remove participant:', error);
       Alert.alert('Error', 'Failed to remove participant.');
     }
   };
@@ -308,7 +308,7 @@ const QuestScreen = ({ route }) => {
       setFilteredFriends(friendsList); // Initially, the filtered list is the same as the full list
       setInviteModalVisible(true);
     } catch (error) {
-      console.error('Failed to load friends list:', error);
+      //console.error('Failed to load friends list:', error);
       Alert.alert('Error', 'Failed to load friends list.');
     }
   };
@@ -327,12 +327,12 @@ const QuestScreen = ({ route }) => {
   };
 
   const handleInviteFriend = async (friendId) => {
-    console.log('Inviting friend with ID:', friendId);
-    console.log('Current quest ID:', questDetails.quest_id);
-    console.log('Current user ID:', currentUserId);
+    //console.log('Inviting friend with ID:', friendId);
+    //console.log('Current quest ID:', questDetails.quest_id);
+    //console.log('Current user ID:', currentUserId);
 
     if (!friendId || !questDetails.quest_id || !currentUserId) {
-      console.error('Missing required data: friendId, questId, or currentUserId');
+      //console.error('Missing required data: friendId, questId, or currentUserId');
       Alert.alert('Error', 'Missing required data.');
       return;
     }
@@ -350,7 +350,7 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Success', `Invite sent to ${friendId}`);
       setInviteModalVisible(false); // Close the modal after inviting
     } catch (error) {
-      console.error('Failed to invite friend:', error);
+      //console.error('Failed to invite friend:', error);
       Alert.alert('Error', 'Failed to invite friend.');
     }
   };

@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions, Alert } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
@@ -9,19 +9,33 @@ const Header = ({ userInfo }) => {
   const navigation = useNavigation();
   const route = useRoute();
 
+  // Log out and open Welcome Screen
   const handleLogout = async () => {
     navigation.navigate('Welcome');
     await logOut();
+  };
+
+  // Confirmation alert for log out
+  const confirmLogout = () => {
+    Alert.alert(
+      "Confirm Logout",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log Out", onPress: handleLogout },
+      ],
+      { cancelable: true }
+    );
   };
 
   const goToHome = () => {
     navigation.navigate('Home');
   };
 
+  // Calculate title position
   const screenWidth = Dimensions.get('window').width;
   const titleWidth = 0;
   const iconWidth = 65;
-
   const marginLeft = screenWidth / 2 - iconWidth;
 
   return (
@@ -47,7 +61,7 @@ const Header = ({ userInfo }) => {
           <Text style={styles.headerTitleText}>Habit Buddies</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleLogout}>
+        <TouchableOpacity onPress={confirmLogout}>
           <MaterialCommunityIcons name="logout" size={30} color="black" />
         </TouchableOpacity>
       </View>

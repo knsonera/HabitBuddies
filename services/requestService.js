@@ -1,5 +1,5 @@
-const BASE_URL = 'https://www.uzhvieva.com:443';
-//const BASE_URL = 'http://localhost:3000';
+//const BASE_URL = 'https://www.uzhvieva.com:443';
+const BASE_URL = 'http://localhost:3000';
 
 export const makeRequest = async (endpoint, method, body, token = null) => {
     const headers = {

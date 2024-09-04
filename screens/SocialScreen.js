@@ -30,7 +30,7 @@ const SocialScreen = () => {
         setQuestsFeed(questsData);
         setCheckinsFeed(checkinsData);
       } catch (error) {
-        console.error('Failed to fetch feeds:', error);
+        //console.error('Failed to fetch feeds:', error);
       } finally {
         setLoading(false);
       }
@@ -45,13 +45,13 @@ const SocialScreen = () => {
     const eventType = activeTab === 'quests' ? 'UserQuest' : 'CheckIn';
     const event_id = eventType === 'UserQuest' ? quest_id : checkin_id;
 
-    console.log('Data: ' + user_id + ", " + eventType + ", " + event_id);
+    //console.log('Data: ' + user_id + ", " + eventType + ", " + event_id);
 
     try {
         await sendPowerUp(user_id, eventType, event_id, message);
         alert('Power-Up sent!');
     } catch (error) {
-        console.error('Failed to send Power-Up:', error);
+        //console.error('Failed to send Power-Up:', error);
     } finally {
         setShowModal(false);
         setSelectedUpdate(null);

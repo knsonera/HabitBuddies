@@ -47,7 +47,7 @@ const ProfileScreen = ({ route, navigation }) => {
         setIsFriendRequestToCurrentUser(isFriendRequestToCurrentUser);
       }
     } catch (error) {
-      console.error('Error fetching friendship status:', error);
+      //console.error('Error fetching friendship status:', error);
     }
   };
 
@@ -55,10 +55,10 @@ const ProfileScreen = ({ route, navigation }) => {
     setLoading(true);
     try {
       const friends = await fetchUserFriends(userIdToFetch);
-      console.log('Friends List:', friends);
+      //console.log('Friends List:', friends);
       setFriendsList(friends);
     } catch (error) {
-      console.error('Failed to fetch friends list:', error);
+      //console.error('Failed to fetch friends list:', error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ const ProfileScreen = ({ route, navigation }) => {
       });
 
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      //console.error('Failed to load user data:', error);
       setUserQuests({ current: [], past: [] });
     } finally {
       setLoading(false);
@@ -105,7 +105,7 @@ const ProfileScreen = ({ route, navigation }) => {
   }, []);
 
   const handleSaveProfile = async () => {
-      console.log('Save button pressed');
+      //console.log('Save button pressed');
       try {
           const updatedData = {
               fullname: updatedFullname,
@@ -118,10 +118,10 @@ const ProfileScreen = ({ route, navigation }) => {
           const response = await updateUserProfile(userIdToFetch, updatedData);
 
           // Log the response to see what is returned
-          console.log(response);
+          //console.log(response);
 
           // Since the response already contains the updated data, no need to check response.ok or call response.json()
-          console.log('Profile updated successfully:', response);
+          //console.log('Profile updated successfully:', response);
 
           // Update the local state with the new profile data
           setUserProfile((prevState) => ({
@@ -137,7 +137,7 @@ const ProfileScreen = ({ route, navigation }) => {
           setEditMode(false);
 
       } catch (error) {
-          console.error('Failed to update profile:', error);
+          //console.error('Failed to update profile:', error);
       }
     };
 
@@ -166,7 +166,7 @@ const ProfileScreen = ({ route, navigation }) => {
         ]);
 
     } catch (error) {
-        console.error('Error loading data:', error);
+        //console.error('Error loading data:', error);
     } finally {
         // Set loading to false after all promises resolve or reject
         setLoading(false);
@@ -175,7 +175,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (!userIdToFetch) {
-      console.error('Error: User ID is undefined');
+      //console.error('Error: User ID is undefined');
     }
     getProfileContent();
 
@@ -205,7 +205,7 @@ const ProfileScreen = ({ route, navigation }) => {
         setFriendshipStatus('pending');
       }
     } catch (error) {
-      console.error('Error requesting friendship:', error);
+      //console.error('Error requesting friendship:', error);
     } finally {
       getProfileContent();
     }
@@ -218,7 +218,7 @@ const ProfileScreen = ({ route, navigation }) => {
         setFriendshipStatus('active');
       }
     } catch (error) {
-      console.error('Error approving friendship:', error);
+      //console.error('Error approving friendship:', error);
     } finally {
       getProfileContent();
     }
@@ -235,7 +235,7 @@ const ProfileScreen = ({ route, navigation }) => {
         setFriendshipStatus('none');
       }
     } catch (error) {
-      console.error('Error removing friendship:', error);
+      //console.error('Error removing friendship:', error);
     } finally {
       setConfirmationVisible(false);
       getProfileContent();
@@ -357,6 +357,12 @@ const ProfileScreen = ({ route, navigation }) => {
               <Text style={styles.questTitle}>{item.quest_name}</Text>
             </View>
           </TouchableOpacity>
+        )}
+
+        ListEmptyComponent={() => (
+          <View style={styles.emptyState}>
+            <Text style={styles.noQuestsText}>No active quests</Text>
+          </View>
         )}
 
         ListHeaderComponent={() => (

@@ -19,7 +19,7 @@ const PowerUpScreen = () => {
           const fetchedPowerUps = await fetchPowerUps();
           setPowerUps(fetchedPowerUps);
         } catch (error) {
-          console.error('Error fetching power-ups:', error);
+          //console.error('Error fetching power-ups:', error);
           Alert.alert('Error', 'Failed to fetch power-ups');
         }
       }
@@ -35,7 +35,7 @@ const PowerUpScreen = () => {
         // Remove the marked power-up from the state
         setPowerUps((prevPowerUps) => prevPowerUps.filter((powerUp) => powerUp.power_up_id !== powerUpId));
     } catch (error) {
-        console.error('Error marking power-up as read:', error);
+        //console.error('Error marking power-up as read:', error);
         Alert.alert('Error', 'Failed to mark the power-up as read');
     }
   };

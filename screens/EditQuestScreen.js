@@ -6,9 +6,9 @@ import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { editQuest } from '../services/apiService'; // Import the necessary functions
-import { AuthContext } from '../context/AuthContext'; // Import AuthContext
-import iconsData from '../assets/icons.json'; // Import icons.json
+import { editQuest } from '../services/apiService';
+import { AuthContext } from '../context/AuthContext';
+import iconsData from '../assets/icons.json';
 
 const durationUnits = [
   { label: 'Days', value: 'days' },
@@ -31,11 +31,12 @@ const times = [
 ];
 
 const EditQuestScreen = ({ route }) => {
-  const { questDetails } = route.params || {}; // Destructure the passed quest details
+  const { questDetails } = route.params || {};
 
   const navigation = useNavigation();
-  const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
+  const { authToken, userId } = useContext(AuthContext); // Use AuthContext
 
+  // Quest info
   const [initialQuestDetails, setInitialQuestDetails] = useState(questDetails);
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
   const [description, setDescription] = useState(questDetails ? questDetails.description : '');
@@ -45,33 +46,44 @@ const EditQuestScreen = ({ route }) => {
   const [time, setTime] = useState(questDetails ? questDetails.time : 'evening');
   const [zoomLink, setZoomLink] = useState(questDetails ? questDetails.zoom_link : '');
   const [icon, setIcon] = useState(questDetails ? questDetails.icon : null);
+
+  // Modal with quest icons
   const [modalVisible, setModalVisible] = useState(false);
   const [icons, setIcons] = useState([]);
 
+  // Dropdown pickers
   const [openDurationUnit, setOpenDurationUnit] = useState(false);
   const [openFrequency, setOpenFrequency] = useState(false);
   const [openTime, setOpenTime] = useState(false);
 
+  // Load icons
   useEffect(() => {
     setIcons(iconsData.icons);
   }, []);
 
+  // Parse quest duration
   useEffect(() => {
     if (questDetails?.duration) {
-      const [dur, unit] = questDetails.duration.split(' ');
+      const [dur, unit] = questDetails.duration.split(' ') || ['1', 'days'];  // Default values
       setDuration(dur);
       setDurationUnit(unit);
     }
   }, [questDetails]);
 
+  // Validate data (basic check)
   const validateForm = () => {
     if (!name || !description || !duration) {
       alert('Please fill all the fields.');
       return false;
     }
+    if (isNaN(duration)) {
+       alert('Duration must be a valid number.');
+       return false;
+    }
     return true;
   };
 
+  // Submit data to the server
   const handleSubmit = async () => {
       if (validateForm()) {
           const newQuestDetails = {
@@ -91,25 +103,25 @@ const EditQuestScreen = ({ route }) => {
           };
 
           try {
-              console.log('Sending quest data:', newQuestDetails); // For debugging
               await editQuest(newQuestDetails, authToken);
               alert('Quest updated successfully!');
               navigation.navigate('Home');
           } catch (error) {
-              console.error('Failed to edit the quest:', error);
-              alert('Failed to edit the quest.');
+              Alert.alert('Error', 'Failed to edit the quest.');
           }
       }
   };
 
-  const renderIcon = (icon) => {
+  // Render quest icon
+  const renderIcon = useCallback((icon) => {
     if (icon.library === 'FontAwesome') {
-      return <FontAwesome name={icon.name} size={24} color="black" />;
+        return <FontAwesome name={icon.name} size={24} color="black" />;
     } else {
-      return <MaterialCommunityIcons name={icon.name} size={24} color="black" />;
+        return <MaterialCommunityIcons name={icon.name} size={24} color="black" />;
     }
-  };
+  }, []);
 
+  // Quest information form
   const renderForm = () => (
     <View style={styles.contentContainer}>
       <Text style={styles.title}>Edit Quest</Text>
@@ -148,6 +160,7 @@ const EditQuestScreen = ({ route }) => {
           dropDownContainerStyle={styles.dropdownContainer}
         />
       </View>
+
       <DropDownPicker
         open={openFrequency}
         value={frequency}

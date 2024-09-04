@@ -1,8 +1,8 @@
 import { getAuthToken, setAuthToken, clearAuthToken, getRefreshToken, getUserId, refreshAuthToken } from './authService';
 import { makeRequest } from './requestService';
 
-const BASE_URL = 'https://www.uzhvieva.com:443';
-//const BASE_URL = 'http://localhost:3000';
+//const BASE_URL = 'https://www.uzhvieva.com:443';
+const BASE_URL = 'http://localhost:3000';
 
 // Function to handle unauthenticated requests
 export const requestWithoutAuth = async (endpoint, method = 'POST', body = null) => {
@@ -19,7 +19,7 @@ export const requestWithoutAuth = async (endpoint, method = 'POST', body = null)
             return response.text();
         }
     } catch (error) {
-        console.error('API request error:', error);
+        //console.error('API request error:', error);
         throw error;
     }
 };
@@ -63,7 +63,7 @@ export const requestWithAuth = async (endpoint, method = 'GET', body = null, ret
             return text;
         }
     } catch (error) {
-        console.error('API request error:', error);
+        //console.error('API request error:', error);
         throw error;
     }
 };
@@ -73,13 +73,13 @@ export const checkTokenValidity = async () => {
         const response = await requestWithAuth('/auth/check-token', 'POST');
         return response.status === 200;
     } catch (error) {
-        console.error('Token validation failed:', error);
+        //console.error('Token validation failed:', error);
         return false;
     }
 };
 
 export const signUp = async (email, password, username, fullname) => {
-    console.log('api service: signUp');
+    //console.log('api service: signUp');
     try {
         const data = await requestWithoutAuth('/auth/signup', 'POST', { email, password, username, fullname });
         return data;
@@ -95,7 +95,7 @@ export const signUp = async (email, password, username, fullname) => {
 };
 
 export const logIn = async (email, password) => {
-    console.log('api service: logIn');
+    //console.log('api service: logIn');
     try {
         const data = await requestWithoutAuth('/auth/login', 'POST', { email, password });
         return data;
@@ -126,7 +126,7 @@ export const updateUserProfile = async (userId, updatedData) => {
         const response = await requestWithAuth(`/users/${userId}`, 'PUT', updatedData);
         return response;
     } catch (error) {
-        console.error('Error updating profile:', error);
+        //console.error('Error updating profile:', error);
         throw error;
     }
 };
@@ -140,7 +140,7 @@ export const createQuest = async (questData, refreshQuests) => {
         }
         return newQuest;
     } catch (error) {
-        console.error('Failed to create quest:', error);
+        //console.error('Failed to create quest:', error);
         throw error;
     }
 };
@@ -148,7 +148,7 @@ export const createQuest = async (questData, refreshQuests) => {
 // Edit an existing quest
 export const editQuest = async (questData) => {
     const { userQuestId, ...data } = questData;
-    console.log(userQuestId);
+    //console.log(userQuestId);
     return requestWithAuth(`/quests/${userQuestId}`, 'PUT', data);
 };
 
@@ -158,7 +158,7 @@ export const endQuest = async (questId) => {
         const response = await requestWithAuth(`/quests/${questId}/end`, 'PUT');
         return response;
     } catch (error) {
-        console.error('Failed to end the quest:', error);
+        //console.error('Failed to end the quest:', error);
         throw error;
     }
 };
@@ -169,7 +169,7 @@ export const completeQuest = async (questId) => {
         const response = await requestWithAuth(`/quests/${questId}/complete`, 'PUT');
         return response;
     } catch (error) {
-        console.error('Failed to end the quest:', error);
+        //console.error('Failed to end the quest:', error);
         throw error;
     }
 };
@@ -180,7 +180,7 @@ export const fetchUserQuests = async (userId = null) => {
     if (!id) {
         throw new Error('User ID is required');
     }
-    console.log('fetching user quests');
+    //console.log('fetching user quests');
     return requestWithAuth(`/users/${id}/quests`, 'GET');
 };
 
@@ -190,7 +190,7 @@ export const fetchPastUserQuests = async (userId = null) => {
     if (!id) {
         throw new Error('User ID is required');
     }
-    console.log('fetching past user quests');
+    //console.log('fetching past user quests');
     return requestWithAuth(`/users/${id}/quests/past`, 'GET');
 };
 
@@ -235,7 +235,7 @@ export const requestFriendship = async (friendId) => {
     if (!userId || !friendId) {
         throw new Error('Both user ID and friend ID are required');
     }
-    console.log("Sending friend request from:", userId, "to:", friendId);
+    //console.log("Sending friend request from:", userId, "to:", friendId);
     return requestWithAuth('/friendships/request', 'POST', { userId, friendId });
 };
 
@@ -273,8 +273,8 @@ export const fetchFriendshipSender = async (friendId) => {
 
 export const fetchUserFriends = async (userId) => {
   const response = await requestWithAuth(`/users/${userId}/friends`, 'GET');
-  console.log('users friends:');
-  console.log(response);
+  //console.log('users friends:');
+  //console.log(response);
   return response;
 };
 

@@ -1,4 +1,6 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
+import { View, Text, SafeAreaView, ActivityIndicator, StyleSheet } from 'react-native';
+
 import { logIn, signUp, fetchUserInfo,checkTokenValidity } from '../services/apiService';
 import { getAuthToken, refreshAuthToken, setAuthToken, getUserId, clearAuthToken } from '../services/authService';
 
@@ -10,23 +12,22 @@ export const AuthProvider = ({ children }) => {
     const [userInfo, setUserInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Initialize the authentication state when the app loads
     useEffect(() => {
         const initializeAuth = async () => {
             const token = await getAuthToken();
-            console.log('AuthProvider - Fetched auth token:', token);
             if (token) {
                 const storedUserId = await getUserId();
-                console.log('AuthProvider - Fetched userId:', storedUserId);
                 if (storedUserId) {
                     setAuthTokenState(token);
                     setUserId(storedUserId);
                     try {
+                        // Fetch and set user information
                         const userInfo = await fetchUserInfo(storedUserId);
-                        console.log('AuthProvider - Fetched userInfo:', userInfo);
                         setUserInfo(userInfo);
                     } catch (error) {
                         console.error('AuthProvider - Error fetching user info:', error);
-                        await logOut();
+                        await logOut(); // Log out if fetching user info fails
                     }
                 } else {
                     console.error('AuthProvider - No userId found, logging out');
@@ -38,10 +39,10 @@ export const AuthProvider = ({ children }) => {
         initializeAuth();
     }, []);
 
+    // Handle user login
     const logInUser = async (email, password) => {
         try {
             const response = await logIn(email, password);
-            console.log('LogIn Response:', response);
             if (response.userId) {
                 await setAuthToken(response.token, response.refreshToken, response.userId);
                 setAuthTokenState(response.token);
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Handle user sign up
     const signUpUser = async (email, password, username, fullname) => {
         try {
             const response = await signUp(email, password, username, fullname);
@@ -71,6 +73,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Handle user log out
     const logOut = async () => {
         await clearAuthToken();
         setAuthTokenState('');
@@ -78,33 +81,36 @@ export const AuthProvider = ({ children }) => {
         setUserInfo(null);
     };
 
+    // Validate the current token and refresh it if necessary
     const validateToken = async () => {
-        if (authToken) {
-            const isValid = await checkTokenValidity();
-            if (!isValid) {
-                try {
-                    const newToken = await refreshAuthToken();
-                    if (newToken) {
-                        await setAuthToken(newToken.token, newToken.refreshToken, newToken.userId);
-                        setAuthTokenState(newToken.token);
-                        setUserId(newToken.userId);
-                        const userInfo = await fetchUserInfo(newToken.userId);
-                        setUserInfo(userInfo);
-                        return true;
-                    } else {
-                        throw new Error('Session expired. Please log in again.');
-                    }
-                } catch (error) {
-                    await logOut();
-                    console.error('Token validation failed:', error);
-                    return false;
-                }
+      if (authToken) {
+        try {
+          const isValid = await checkTokenValidity();
+          if (!isValid) {
+            const newToken = await refreshAuthToken();
+            if (newToken) {
+              await setAuthToken(newToken.token, newToken.refreshToken, newToken.userId);
+              setAuthTokenState(newToken.token);
+              setUserId(newToken.userId);
+              const userInfo = await fetchUserInfo(newToken.userId);
+              setUserInfo(userInfo);
+              return true;
+            } else {
+              throw new Error('Session expired.');
             }
-            return true;
+          }
+          return true;
+        } catch (error) {
+          await logOut(); // Log out if token refresh fails
+          Alert.alert('Session expired', 'Please log in again.'); // Show an alert for better user feedback
+          console.error('Token validation failed:', error);
+          return false;
         }
-        return false;
+      }
+      return false;
     };
 
+    // Function to refresh tokens manually
     const refreshTokens = async () => {
         const newTokens = await refreshAuthToken();
         if (newTokens) {
@@ -118,9 +124,37 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const authContextValue = useMemo(() => ({
+        authToken,
+        userId,
+        userInfo,
+        logInUser,
+        signUpUser,
+        logOut,
+        validateToken,
+        isLoading,
+        refreshTokens
+    }), [authToken, userId, userInfo, isLoading]);
+
+    // Provide the authentication state and functions to the app
     return (
-        <AuthContext.Provider value={{ authToken, userId, userInfo, logInUser, signUpUser, logOut, validateToken, isLoading, refreshTokens }}>
-            {children}
+        <AuthContext.Provider value={authContextValue}>
+          {isLoading ? (
+              <SafeAreaView style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#444" />
+                  <Text>Loading...</Text>
+              </SafeAreaView>
+          ) : (
+              children
+          )}
         </AuthContext.Provider>
     );
 };
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+});

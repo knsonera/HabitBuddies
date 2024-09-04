@@ -8,6 +8,7 @@ const AuthLoadingScreen = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
+    // Check if user is already logged in
     const checkAuthStatus = async () => {
       if (!authToken || !userId) {
         navigation.navigate('Welcome');
@@ -15,6 +16,7 @@ const AuthLoadingScreen = () => {
       }
 
       try {
+        // Check if token is valid
         const isValid = await validateToken();
         if (isValid) {
           navigation.navigate('Home');
@@ -23,7 +25,6 @@ const AuthLoadingScreen = () => {
           navigation.navigate('Welcome');
         }
       } catch (error) {
-        console.error('Token validation failed:', error);
         Alert.alert('Session Error', 'Failed to validate session. Please log in again.');
         await logOut();
         navigation.navigate('Welcome');
@@ -31,7 +32,7 @@ const AuthLoadingScreen = () => {
     };
 
     checkAuthStatus();
-  }, [authToken, userId]);
+  }, [authToken, userId, navigation]);
 
   return (
     <View style={styles.container}>

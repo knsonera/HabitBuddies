@@ -6,9 +6,9 @@ import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { createQuest } from '../services/apiService'; // Import the necessary functions
-import { AuthContext } from '../context/AuthContext'; // Import AuthContext
-import iconsData from '../assets/icons.json'; // Import icons.json
+import { createQuest } from '../services/apiService';
+import { AuthContext } from '../context/AuthContext';
+import iconsData from '../assets/icons.json';
 
 const durationUnits = [
   { label: 'Days', value: 'days' },
@@ -96,7 +96,7 @@ const NewQuestScreen = ({ route }) => {
               }
               navigation.navigate('Home');
           } catch (error) {
-              console.error('Failed to start a quest:', error);
+              //console.error('Failed to start a quest:', error);
               alert('Failed to start a quest.');
           }
       }
@@ -236,7 +236,7 @@ const NewQuestScreen = ({ route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#FFFFFF',
   },
   scrollViewContent: {
     flexGrow: 1,

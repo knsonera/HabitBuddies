@@ -15,15 +15,18 @@ const ChatScreen = ({ route }) => {
     const [showConnectionMessage, setShowConnectionMessage] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
+    // Fetching messages from the database
     const loadMessages = useCallback(async () => {
         try {
             const fetchedMessages = await fetchMessages(questId, authToken);
             setMessages(fetchedMessages);
         } catch (error) {
-            console.error('Failed to load messages:', error);
+            //console.error('Failed to load messages:', error);
+            Alert.alert('Error', 'Failed to load messages.');
         }
     }, [questId, authToken]);
 
+    // Connection status pop-up message
     const showConnectionPopup = useCallback(() => {
         setShowConnectionMessage(true);
         Animated.timing(fadeAnim, {
@@ -41,9 +44,11 @@ const ChatScreen = ({ route }) => {
         });
     }, [fadeAnim]);
 
+    // Sending messages to the server
     const handleSend = useCallback(async () => {
         if (newMessage.trim() === '') return;
 
+        // Prepare data
         const message = {
             questId,
             user_id: userId,
@@ -51,32 +56,40 @@ const ChatScreen = ({ route }) => {
             sent_at: new Date().toISOString(),
         };
 
+        //
         try {
+            // If websocket server is up and running
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify(message));
-
                 setNewMessage('');
+            // If websocket server is not available
             } else {
                 await sendMessage(questId, message, authToken);
                 setNewMessage('');
             }
         } catch (error) {
-            console.error('Failed to send message:', error);
+            //console.error('Failed to send message:', error);
+            Alert.alert('Error', 'Failed to send message.');
         }
     }, [newMessage, ws, questId, userId, authToken]);
 
     useEffect(() => {
         if (ws) return;
+        let reconnectAttempts = 0;
 
         const createWebSocket = () => {
-            const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
-            //const socket = new WebSocket(`ws://localhost:3000`, authToken);
+            if (reconnectAttempts > 5) {
+                Alert.alert("Connection Error", "Failed to connect to the server after 5 attempts.");
+                return;
+            }
+            // Production
+            //const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
+            // Development
+            const socket = new WebSocket(`ws://localhost:3000`, authToken);
 
             socket.onopen = () => console.log('WebSocket connected');
 
             socket.onmessage = event => {
-                console.log('Received WebSocket message:', event.data);
-
                 // Check for connection message
                 if (event.data === "You are connected.") {
                     showConnectionPopup();  // Show the connection message
@@ -88,9 +101,7 @@ const ChatScreen = ({ route }) => {
                     let message;
                     try {
                         message = JSON.parse(event.data);
-                        console.log('Parsed message:', message); // Log the parsed message to inspect the fields
                     } catch (error) {
-                        console.error('Failed to parse WebSocket message:', error);
                         return;
                     }
 
@@ -111,17 +122,19 @@ const ChatScreen = ({ route }) => {
                         });
                     }
                 } else if (Array.isArray(event.data) && event.data.length === 0) {
-                    console.log('Received an empty message array');
+                    // TODO: empty array error handling
+                    //console.warn('Received empty array');
                 } else {
-                    console.log('Non-JSON message received:', event.data);
+                    // TODO: invalid data handling
+                    //console.warn('Received invalid data');
                 }
             };
 
             socket.onerror = error => console.error('WebSocket error:', error);
 
             socket.onclose = () => {
-                console.log('WebSocket closed, attempting to reconnect...');
-                setTimeout(createWebSocket, 3000); // Retry connection after 3 seconds
+                reconnectAttempts++;
+                setTimeout(createWebSocket, reconnectAttempts * 3000);
             };
 
             setWs(socket);
@@ -132,9 +145,10 @@ const ChatScreen = ({ route }) => {
         return () => {
             if (ws) ws.close();
         };
-    }, [questId, authToken]);
+    }, [questId, authToken, ws]);
 
 
+    // Show new messages
     useFocusEffect(
         React.useCallback(() => {
             loadMessages();
@@ -142,20 +156,20 @@ const ChatScreen = ({ route }) => {
                 if (messages.length > 0) {
                     flatListRef.current.scrollToEnd({ animated: false });
                 }
-            }, 1000); // Timeout to ensure messages are loaded
+            }, 1000);
+            // Timeout to ensure messages are loaded
         }, [userId, loadMessages])
     );
 
+    // Hide keyboard after sending a message
     const handleEnterPress = () => {
         handleSend();
         Keyboard.dismiss();
     };
 
+    // Render new message
     const renderItem = ({ item }) => {
-        console.log('Rendering item:', item);
-
         const isCurrentUser = item.user_id === userId;
-
         return (
             <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
                 {!isCurrentUser && (
@@ -189,7 +203,7 @@ const ChatScreen = ({ route }) => {
                         keyExtractor={(item, index) => item.message_id ? item.message_id.toString() : `key-${index}`}
                         contentContainerStyle={styles.scrollViewContent}
                         initialNumToRender={10}
-                        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })}
+                        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                     />
                 )}
 
@@ -203,6 +217,7 @@ const ChatScreen = ({ route }) => {
                         accessibilityLabel="Message Input"
                         onSubmitEditing={handleEnterPress}
                         blurOnSubmit={false}
+                        placeholderTextColor="#444"
                     />
                     <TouchableOpacity
                         style={styles.sendButton}

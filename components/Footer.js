@@ -8,9 +8,6 @@ const Footer = ({ hasUnreadPowerUps, powerUps }) => {
   const navigation = useNavigation();
   const { userId } = useContext(AuthContext); // Get the current user's ID from AuthContext
 
-  console.log('userId');
-  console.log(userId);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.footerContainer}>
@@ -26,7 +23,7 @@ const Footer = ({ hasUnreadPowerUps, powerUps }) => {
         <TouchableOpacity onPress={() => navigation.navigate('PowerUp', { powerUps: powerUps ?? null })}>
           <MaterialCommunityIcons name="heart" size={30} color={hasUnreadPowerUps ? "red" : "#000"} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId })}>
+        <TouchableOpacity onPress={() => userId && navigation.navigate('Profile', { userId })}>
           <MaterialCommunityIcons name="account" size={30} color="black" />
         </TouchableOpacity>
       </View>
