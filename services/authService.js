@@ -51,6 +51,7 @@ export const clearAuthToken = async () => {
     }
 };
 
+// Get current user id
 export const getUserId = async () => {
     if (!userId) {
         try {
@@ -67,6 +68,7 @@ export const getUserId = async () => {
     return userId;
 };
 
+// Refresh current user's token
 export const refreshAuthToken = async () => {
     try {
         const refreshToken = await getRefreshToken();

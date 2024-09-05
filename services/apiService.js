@@ -5,6 +5,7 @@ import NetInfo from '@react-native-community/netinfo'; // Add this for network c
 const BASE_URL = 'https://www.uzhvieva.com:443';
 //const BASE_URL = 'http://localhost:3000';
 
+// Check if user is connected to the Internet
 const checkNetworkConnection = async () => {
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
@@ -42,6 +43,7 @@ export const requestWithoutAuth = async (endpoint, method = 'POST', body = null)
 export const requestWithAuth = async (endpoint, method = 'GET', body = null, retry = true) => {
     // Check network connectivity
     await checkNetworkConnection();
+    // Get the token
     let token = await getAuthToken();
     try {
         let response = await makeRequest(endpoint, method, body, token);
@@ -56,7 +58,7 @@ export const requestWithAuth = async (endpoint, method = 'GET', body = null, ret
                 throw new Error('Session expired. Please log in again.');
             }
         }
-
+        // Handle errors
         if (!response.ok) {
             const errorText = await response.text();
             let errorMessage = errorText;
@@ -87,6 +89,7 @@ export const requestWithAuth = async (endpoint, method = 'GET', body = null, ret
     }
 };
 
+// Check if token is still valid
 export const checkTokenValidity = async () => {
     try {
         const response = await requestWithAuth('/auth/check-token', 'POST');
@@ -96,6 +99,7 @@ export const checkTokenValidity = async () => {
     }
 };
 
+// User sign-up
 export const signUp = async (email, password, username, fullname) => {
     try {
         const data = await requestWithoutAuth('/auth/signup', 'POST', { email, password, username, fullname });
@@ -111,6 +115,7 @@ export const signUp = async (email, password, username, fullname) => {
     }
 };
 
+// User log in
 export const logIn = async (email, password) => {
     try {
         const data = await requestWithoutAuth('/auth/login', 'POST', { email, password });
@@ -133,6 +138,7 @@ export const fetchUserInfo = async (userId = null) => {
     return requestWithAuth(`/users/${id}`, 'GET');
 };
 
+// Update user info
 export const updateUserProfile = async (userId, updatedData) => {
     if (!userId) {
         throw new Error('User ID is required');
@@ -146,6 +152,8 @@ export const updateUserProfile = async (userId, updatedData) => {
     }
 };
 
+// QUESTS
+// Create new quest
 export const createQuest = async (questData, refreshQuests) => {
     try {
         const newQuest = await requestWithAuth('/quests', 'POST', questData);
@@ -165,6 +173,7 @@ export const editQuest = async (questData) => {
     return requestWithAuth(`/quests/${userQuestId}`, 'PUT', data);
 };
 
+// End quest aka change status to dropped
 export const endQuest = async (questId) => {
     try {
         // Send the request to the new endpoint that marks the quest as completed
@@ -175,6 +184,7 @@ export const endQuest = async (questId) => {
     }
 };
 
+// Complete quest aka change status to complete
 export const completeQuest = async (questId) => {
     try {
         // Send the request to the new endpoint that marks the quest as completed
@@ -203,12 +213,12 @@ export const fetchPastUserQuests = async (userId = null) => {
     return requestWithAuth(`/users/${id}/quests/past`, 'GET');
 };
 
-// Fetch users for quest
+// Fetch all quest participants
 export const fetchQuestParticipants = async (questId) => {
     return requestWithAuth(`/quests/${questId}/users`, 'GET');
 };
 
-// Fetch owner for quest
+// Fetch owner of the quest
 export const fetchQuestOwner = async (questId) => {
     return requestWithAuth(`/quests/${questId}/owner`, 'GET');
 };
@@ -221,16 +231,19 @@ export const fetchQuestCategory = async (questId, owner_id) => {
     return requestWithAuth(`/quests/${questId}/category?ownerId=${owner_id}`, 'GET');
 };
 
-// Chat
+// CHAT
+// Get messages by quest id
 export const fetchMessages = async (questId, authToken) => {
     return requestWithAuth(`/quests/${questId}/messages`, 'GET', null, authToken);
 };
 
-// Chat
+// Send message to chat
 export const sendMessage = async (questId, message, authToken) => {
     return requestWithAuth(`/quests/${questId}/messages`, 'POST', message, authToken);
 };
 
+// SEARCH
+// User search
 export const searchUsers = async (query) => {
     if (!query) {
         throw new Error('Search query is required');
@@ -238,7 +251,8 @@ export const searchUsers = async (query) => {
     return requestWithAuth(`/users/search?query=${encodeURIComponent(query)}`, 'GET');
 };
 
-// Friendship Functions
+// FRIENDSHIPS
+// Request friendship
 export const requestFriendship = async (friendId) => {
     const userId = await getUserId();
     if (!userId || !friendId) {
@@ -247,6 +261,7 @@ export const requestFriendship = async (friendId) => {
     return requestWithAuth('/friendships/request', 'POST', { userId, friendId });
 };
 
+// Approve friendship request
 export const approveFriendship = async (friendId) => {
     const userId = await getUserId();
     if (!userId || !friendId) {
@@ -255,6 +270,7 @@ export const approveFriendship = async (friendId) => {
     return requestWithAuth('/friendships/approve', 'PUT', { userId, friendId });
 };
 
+// Remove friendship
 export const removeFriendship = async (friendId) => {
     const userId = await getUserId();
     if (!userId || !friendId) {
@@ -263,6 +279,7 @@ export const removeFriendship = async (friendId) => {
     return requestWithAuth('/friendships/remove', 'DELETE', { userId, friendId });
 };
 
+// Check friendship status
 export const fetchFriendshipStatus = async (friendId) => {
     const userId = await getUserId();
     if (!userId || !friendId) {
@@ -271,6 +288,7 @@ export const fetchFriendshipStatus = async (friendId) => {
     return requestWithAuth(`/friendships/status?userId=${userId}&friendId=${friendId}`, 'GET');
 };
 
+// Check friendship initiator (sender)
 export const fetchFriendshipSender = async (friendId) => {
     const userId = await getUserId();
     if (!userId || !friendId) {
@@ -279,12 +297,14 @@ export const fetchFriendshipSender = async (friendId) => {
     return requestWithAuth(`/friendships/sender?userId=${userId}&friendId=${friendId}`, 'GET');
 };
 
+// Get all user's friends
 export const fetchUserFriends = async (userId) => {
   const response = await requestWithAuth(`/users/${userId}/friends`, 'GET');
   return response;
 };
 
-// Join Quests
+// MORE QUESTS
+// Request to Join the quest
 export const requestToJoinQuest = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -303,6 +323,7 @@ export const removeParticipant = async (questId, participantId, authToken) => {
   return requestWithAuth(`/quests/${questId}/request-delete`, 'DELETE', { userId: participantId }, authToken);
 };
 
+// Invite a friend to quest
 export const inviteFriendToQuest = async (questId, friendId, currentUserId) => {
     if (!questId || !friendId || !currentUserId) {
         throw new Error('Quest ID and Friend ID are required');
@@ -311,7 +332,7 @@ export const inviteFriendToQuest = async (questId, friendId, currentUserId) => {
     return requestWithAuth(`/quests/${questId}/invite`, 'POST', { userId: friendId, inviterId: currentUserId });
 };
 
-// Approve Invite to Quest
+// Approve invite to quest
 export const acceptQuestInvite = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -320,7 +341,7 @@ export const acceptQuestInvite = async (questId) => {
     return requestWithAuth(`/quests/${questId}/invite-accept`, 'POST');
 };
 
-// Decline Invite to Quest
+// Decline invite to quest
 export const declineQuestInvite = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -329,7 +350,8 @@ export const declineQuestInvite = async (questId) => {
     return requestWithAuth(`/quests/${questId}/invite-delete`, 'DELETE');
 };
 
-// Check-ins
+// CHECK-INS
+// Create new check-in
 export const createCheckIn = async (questId, comment = '') => {
     const userId = await getUserId();
     if (!questId || !userId) {
@@ -338,6 +360,7 @@ export const createCheckIn = async (questId, comment = '') => {
     return requestWithAuth(`/quests/${questId}/checkins`, 'POST', { user_id: userId, comment });
 };
 
+// Get all checkins by quest id
 export const fetchQuestCheckIns = async (questId) => {
     if (!questId) {
         throw new Error('Quest ID is required');
@@ -345,6 +368,7 @@ export const fetchQuestCheckIns = async (questId) => {
     return requestWithAuth(`/quests/${questId}/checkins`, 'GET');
 };
 
+// Get user checkins in a quest by user id and quest id
 export const fetchUserCheckInsForQuest = async (questId, userId) => {
     if (!questId || !userId) {
         throw new Error('Quest ID and User ID are required');
@@ -352,6 +376,7 @@ export const fetchUserCheckInsForQuest = async (questId, userId) => {
     return requestWithAuth(`/quests/${questId}/users/${userId}/checkins`, 'GET');
 };
 
+// Get user checkins in a quest TODAY by user id and quest id
 export const fetchUserCheckInsForQuestToday = async (questId, userId) => {
     if (!questId || !userId) {
         throw new Error('Quest ID and User ID are required');
@@ -359,6 +384,7 @@ export const fetchUserCheckInsForQuestToday = async (questId, userId) => {
     return requestWithAuth(`/quests/${questId}/users/${userId}/checkins/today`, 'GET');
 };
 
+// Get checkins by user id
 export const fetchUserCheckIns = async (userId) => {
     if (!userId) {
         throw new Error('User ID is required');
@@ -366,6 +392,7 @@ export const fetchUserCheckIns = async (userId) => {
     return requestWithAuth(`/users/${userId}/checkins`, 'GET');
 };
 
+// Get user checkins TODAY by user id
 export const fetchUserCheckInsToday = async (userId) => {
     if (!userId) {
         throw new Error('User ID is required');
@@ -373,16 +400,20 @@ export const fetchUserCheckInsToday = async (userId) => {
     return requestWithAuth(`/users/${userId}/checkins/today`, 'GET');
 };
 
-// News Feed
+// NEWS
+
+// Get all quest news
 export const fetchQuestsFeed = async () => {
     return requestWithAuth('/feeds/quests', 'GET');
 };
 
+// Get all checkin news
 export const fetchCheckinsFeed = async () => {
     return requestWithAuth('/feeds/checkins', 'GET');
 };
 
-// Power-Ups
+// POWER-UPS
+// Send power-up to a user
 export const sendPowerUp = async (receiverId, eventType, eventId, message) => {
     if (!receiverId || !eventType || !eventId || !message) {
         throw new Error('All parameters are required to send a power-up');
@@ -396,10 +427,12 @@ export const sendPowerUp = async (receiverId, eventType, eventId, message) => {
     });
 };
 
+// Get user's power-ups
 export const fetchPowerUps = async () => {
     return requestWithAuth('/powerups/unread', 'GET');
 };
 
+// Mark power-up as read
 export const markAsReadPowerUp = async (powerUpId) => {
     if (!powerUpId) {
         throw new Error('PowerUp ID is required');
