@@ -14,6 +14,8 @@ const WelcomeScreen = () => {
   const [fullname, setFullname] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const { logInUser, signUpUser } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(false);
+
   const navigation = useNavigation();
 
   const isValidEmail = (email) => {
@@ -30,71 +32,12 @@ const WelcomeScreen = () => {
     return name.length > 4;
   };
 
-  const handleLogin = async () => {
-    if (!isValidEmail(email)) {
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    if (!isValidPassword(password)) {
-      setErrorMessage('Password must be at least 8 characters long and contain letters, numbers, and special characters.');
-      return;
-    }
-
-    try {
-      await logInUser(email, password);
-      navigation.navigate('Home');
-      setLoginModalVisible(false);
-    } catch (error) {
-      setErrorMessage(error.message);
-    }
-  };
-
-  const handleSignUp = async () => {
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    const trimmedUsername = username.trim();
-    const trimmedFullname = fullname.trim();
-
-    if (!isValidEmail(trimmedEmail)) {
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    if (!isValidPassword(trimmedPassword)) {
-      setErrorMessage('Password must be at least 8 characters long and contain letters, numbers, and special characters.');
-      return;
-    }
-
-    if (!isValidName(trimmedUsername)) {
-      setErrorMessage('Username must be longer than 4 characters.');
-      return;
-    }
-
-    if (!isValidName(trimmedFullname)) {
-      setErrorMessage('Full name must be longer than 4 characters.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
-      return;
-    }
-
-    try {
-      await signUpUser(email, password, username, fullname);
-      navigation.navigate('Home');
-      setSignUpModalVisible(false);
-      resetSignUpForm();
-    } catch (error) {
-      setErrorMessage(error.message);
-    }
-  };
-
   const resetLoginForm = () => {
     setEmail('');
     setPassword('');
     setErrorMessage('');
+    setEmailError('');
+    setPasswordError('');
   };
 
   const resetSignUpForm = () => {
@@ -104,6 +47,112 @@ const WelcomeScreen = () => {
     setUsername('');
     setFullname('');
     setErrorMessage('');
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+    setUsernameError('');
+    setFullnameError('');
+  };
+
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [fullnameError, setFullnameError] = useState('');
+
+  const handleLogin = async () => {
+      setIsLoading(true);
+      setEmailError('');
+      setPasswordError('');
+
+      if (!isValidEmail(email)) {
+          setEmailError('Please enter a valid email address.');
+          setIsLoading(false);
+          return;
+      }
+
+      if (!isValidPassword(password)) {
+          setPasswordError('Password must be at least 8 characters long and contain letters, numbers, and special characters.');
+          setIsLoading(false);
+          return;
+      }
+
+      try {
+          await logInUser(email, password);
+          navigation.navigate('Home');
+          setLoginModalVisible(false);
+      } catch (error) {
+          if (error.response && error.response.status === 401) {
+              // If it's a 401 Unauthorized error, show friendly invalid login message
+              setErrorMessage('Invalid email or password. Please check your credentials and try again.');
+          } else {
+              // Any other error (e.g., 500 Internal Server Error)
+              setErrorMessage('Something went wrong. Please try again later.');
+          }
+      } finally {
+        setIsLoading(false);
+      }
+  };
+
+  const handleSignUp = async () => {
+      setIsLoading(true);
+      setEmailError('');
+      setPasswordError('');
+      setConfirmPasswordError('');
+      setUsernameError('');
+      setFullnameError('');
+
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+      const trimmedUsername = username.trim();
+      const trimmedFullname = fullname.trim();
+
+      if (!isValidEmail(trimmedEmail)) {
+          setEmailError('Please enter a valid email address.');
+          setIsLoading(false);
+          return;
+      }
+
+      if (!isValidPassword(trimmedPassword)) {
+          setPasswordError('Password must be at least 8 characters long and contain letters, numbers, and special characters.');
+          setIsLoading(false);
+          return;
+      }
+
+      if (!isValidName(trimmedUsername)) {
+          setUsernameError('Username must be longer than 4 characters.');
+          setIsLoading(false);
+          return;
+      }
+
+      if (!isValidName(trimmedFullname)) {
+          setFullnameError('Full name must be longer than 4 characters.');
+          setIsLoading(false);
+          return;
+      }
+
+      if (password !== confirmPassword) {
+          setConfirmPasswordError('Passwords do not match.');
+          setIsLoading(false);
+          return;
+      }
+
+      try {
+          await signUpUser(email, password, username, fullname);
+          navigation.navigate('Home');
+          setSignUpModalVisible(false);
+          resetSignUpForm();
+      } catch (error) {
+        if (error.response && error.response.status === 400) {
+            // 400 Unauthorized error
+            setErrorMessage('User with this email or username already exists.');
+        } else {
+            // Any other error
+            setErrorMessage(error.message);
+        }
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   const handleModalClose = (type) => {
@@ -116,25 +165,25 @@ const WelcomeScreen = () => {
     }
   };
 
-  const renderInputField = (placeholder, value, onChangeText, secureTextEntry = false) => (
-    <TextInput
-      placeholder={placeholder}
-      placeholderTextColor="#444"
-      style={styles.input}
-      value={value}
-      autoCapitalize="none"
-      onChangeText={onChangeText}
-      secureTextEntry={secureTextEntry}
-      accessibilityLabel={placeholder}
-    />
+  const renderInputField = (placeholder, value, onChangeText, secureTextEntry = false, error = '') => (
+    <>
+      <TextInput
+        placeholder={placeholder}
+        placeholderTextColor="#444"
+        style={styles.input}
+        value={value}
+        autoCapitalize="none"
+        onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry}
+        accessibilityLabel={placeholder}
+      />
+      {error ? <Text style={styles.inputError}>{error}</Text> : null}
+    </>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.appName}>Habit Buddies</Text>
-
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={() => setLoginModalVisible(true)}>
           <Text style={styles.buttonText}>Login</Text>
@@ -155,9 +204,14 @@ const WelcomeScreen = () => {
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Welcome Back</Text>
-            {renderInputField('Email', email, setEmail)}
-            {renderInputField('Password', password, setPassword, true)}
-            <TouchableOpacity style={styles.submitButton} onPress={handleLogin}>
+            {renderInputField('Email', email, setEmail, false, emailError)}
+            {renderInputField('Password', password, setPassword, true, passwordError)}
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+            <TouchableOpacity
+              style={[styles.submitButton, isLoading && { backgroundColor: '#ccc' }]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
               <Text style={styles.submitButtonText}>Login</Text>
             </TouchableOpacity>
           </View>
@@ -175,12 +229,17 @@ const WelcomeScreen = () => {
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Create an account</Text>
-            {renderInputField('Full Name', fullname, setFullname)}
-            {renderInputField('Username', username, setUsername)}
-            {renderInputField('Email', email, setEmail)}
-            {renderInputField('Password', password, setPassword, true)}
-            {renderInputField('Confirm Password', confirmPassword, setConfirmPassword, true)}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSignUp}>
+            {renderInputField('Full Name', fullname, setFullname, false, fullnameError)}
+            {renderInputField('Username', username, setUsername, false, usernameError)}
+            {renderInputField('Email', email, setEmail, false, emailError)}
+            {renderInputField('Password', password, setPassword, true, passwordError)}
+            {renderInputField('Confirm Password', confirmPassword, setConfirmPassword, true, confirmPasswordError)}
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+            <TouchableOpacity
+              style={[styles.submitButton, isLoading && { backgroundColor: '#ccc' }]}
+              onPress={handleSignUp}
+              disabled={isLoading}  // Use a state to track form submission
+            >
               <Text style={styles.submitButtonText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
@@ -266,6 +325,12 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 16,
   },
+  inputError: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: -8,  // Adjust the margin if needed to avoid spacing issues
+    marginBottom: 10,
+  }
 });
 
 export default WelcomeScreen;

@@ -21,7 +21,6 @@ const ChatScreen = ({ route }) => {
             const fetchedMessages = await fetchMessages(questId, authToken);
             setMessages(fetchedMessages);
         } catch (error) {
-            //console.error('Failed to load messages:', error);
             Alert.alert('Error', 'Failed to load messages.');
         }
     }, [questId, authToken]);
@@ -68,7 +67,6 @@ const ChatScreen = ({ route }) => {
                 setNewMessage('');
             }
         } catch (error) {
-            //console.error('Failed to send message:', error);
             Alert.alert('Error', 'Failed to send message.');
         }
     }, [newMessage, ws, questId, userId, authToken]);
@@ -83,9 +81,9 @@ const ChatScreen = ({ route }) => {
                 return;
             }
             // Production
-            //const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
+            const socket = new WebSocket(`wss://www.uzhvieva.com:443`, authToken);
             // Development
-            const socket = new WebSocket(`ws://localhost:3000`, authToken);
+            //const socket = new WebSocket(`ws://localhost:3000`, authToken);
 
             socket.onopen = () => console.log('WebSocket connected');
 

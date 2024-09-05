@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useNavigation } from '@react-navigation/native';
-import questsData from '../assets/templates.json'; // Import the local JSON file
-import iconsData from '../assets/icons.json'; // Import the local JSON file
+import questsData from '../assets/templates.json';
+import iconsData from '../assets/icons.json';
 
 const QuestTemplatesScreen = () => {
   const [quests, setQuests] = useState([]);
@@ -14,11 +14,18 @@ const QuestTemplatesScreen = () => {
 
   const navigation = useNavigation();
 
+  // Set states to quest data from json
   useEffect(() => {
-    setQuests(questsData);
-    setLoading(false);
+    try {
+      setQuests(questsData);
+    } catch (error) {
+      Alert.alert('Failed to load quest data:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // Render quest icons
   const renderIcon = (icon_id) => {
     // Find the icon by matching the id from the quest
     const icon = iconsData.icons.find(icon => icon.id === icon_id) || { name: "star", library: "FontAwesome" };
@@ -33,6 +40,7 @@ const QuestTemplatesScreen = () => {
     }
   };
 
+  // Render quest items
   const renderQuests = (quests) => {
     return quests.map((quest) => (
       <TouchableOpacity
@@ -49,11 +57,13 @@ const QuestTemplatesScreen = () => {
     ));
   };
 
+  // Loading screen
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <Header />
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
           <Text>Loading...</Text>
         </View>
         <Footer />
@@ -61,6 +71,7 @@ const QuestTemplatesScreen = () => {
     );
   }
 
+  // No quests
   if (quests.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>

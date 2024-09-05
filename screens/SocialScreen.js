@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, Modal, Alert } from 'react-native';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import { fetchQuestsFeed, fetchCheckinsFeed, sendPowerUp } from '../services/apiService';
 
@@ -15,6 +16,7 @@ const SocialScreen = () => {
   const [selectedUpdate, setSelectedUpdate] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Messages for power-ups
   const presetMessages = [
     "You can do it!",
     "You rock!",
@@ -22,6 +24,15 @@ const SocialScreen = () => {
     "You're amazing!",
   ];
 
+  // Icons for power-ups
+  const iconOptions = [
+    { name: 'thumbs-up', library: 'FontAwesome' },
+    { name: 'star', library: 'FontAwesome' },
+    { name: 'fire', library: 'MaterialCommunityIcons' },
+    { name: 'rocket', library: 'MaterialCommunityIcons' }
+  ];
+
+  // Load data from server
   useEffect(() => {
     const fetchFeeds = async () => {
       try {
@@ -30,7 +41,7 @@ const SocialScreen = () => {
         setQuestsFeed(questsData);
         setCheckinsFeed(checkinsData);
       } catch (error) {
-        //console.error('Failed to fetch feeds:', error);
+        Alert.alert('Error', 'Failed to fetch news feeds');
       } finally {
         setLoading(false);
       }
@@ -39,78 +50,78 @@ const SocialScreen = () => {
     fetchFeeds();
   }, []);
 
+  // Send power-up
   const handleSendPowerUp = async (message) => {
     if (!selectedUpdate) return;
     const { user_id, quest_id, checkin_id } = selectedUpdate;
     const eventType = activeTab === 'quests' ? 'UserQuest' : 'CheckIn';
     const event_id = eventType === 'UserQuest' ? quest_id : checkin_id;
 
-    //console.log('Data: ' + user_id + ", " + eventType + ", " + event_id);
-
     try {
-        await sendPowerUp(user_id, eventType, event_id, message);
-        alert('Power-Up sent!');
+      await sendPowerUp(user_id, eventType, event_id, message);
+      Alert.alert('Success', 'Power-Up sent!');
     } catch (error) {
-        //console.error('Failed to send Power-Up:', error);
+      Alert.alert('Error', 'Failed to send the Power-Up');
+      console.error('Error sending Power-Up:', error);
     } finally {
-        setShowModal(false);
-        setSelectedUpdate(null);
+      setShowModal(false);
+      setSelectedUpdate(null);
     }
-};
+  };
 
+  // Render quest news
   const renderQuests = () => (
-    <ScrollView style={styles.contentContainer}>
-      {questsFeed.length === 0 ? (
-        <Text style={styles.noUpdates}>No new friends' quests.</Text>
-      ) : (
-        questsFeed.map((item) => (
-          <View key={item.quest_id} style={styles.updateContainer}>
-            <Text style={styles.newsText}>
-              <Text style={styles.name}>{item.fullname}</Text>{' '}
-              {item.role === 'owner' ? 'created a new quest:' : "joined a friend's quest:"}
-            </Text>
-            <Text style={styles.questName}>{item.quest_name}</Text>
-            <Text style={styles.time}>{new Date(item.action_time).toLocaleString()}</Text>
-            <TouchableOpacity
-              style={styles.powerUpButton}
-              onPress={() => {
-                setSelectedUpdate(item);
-                setShowModal(true);
-              }}
-            >
-              <MaterialCommunityIcons name="heart" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        ))
+    <FlatList
+      data={questsFeed}
+      keyExtractor={(item) => item.quest_id.toString()}
+      renderItem={({ item }) => (
+        <View style={styles.updateContainer}>
+          <Text style={styles.newsText}>
+            <Text style={styles.name}>{item.fullname}</Text>{' '}
+            {item.role === 'owner' ? 'created a new quest:' : "joined a friend's quest:"}
+          </Text>
+          <Text style={styles.questName}>{item.quest_name}</Text>
+          <Text style={styles.time}>{new Date(item.action_time).toLocaleString()}</Text>
+          <TouchableOpacity
+            style={styles.powerUpButton}
+            onPress={() => {
+              setSelectedUpdate(item);
+              setShowModal(true);
+            }}
+          >
+            <MaterialCommunityIcons name="heart" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       )}
-    </ScrollView>
+      ListEmptyComponent={<View style={styles.contentContainer}><Text style={styles.noUpdates}>No new friends' quests.</Text></View>}
+    />
   );
 
+  // Render checkin news
   const renderCheckins = () => (
-    <ScrollView style={styles.contentContainer}>
-      {checkinsFeed.length === 0 ? (
-        <Text style={styles.noUpdates}>No new friends' check-ins.</Text>
-      ) : (
-        checkinsFeed.map((item) => (
-          <View key={item.checkin_id} style={styles.updateContainer}>
-            <Text style={styles.newsText}>
-              <Text style={styles.name}>{item.fullname}</Text> checked in to:
-            </Text>
-            <Text style={styles.questName}>{item.quest_name}</Text>
-            <Text style={styles.time}>{new Date(item.created_at).toLocaleString()}</Text>
-            <TouchableOpacity
-              style={styles.powerUpButton}
-              onPress={() => {
-                setSelectedUpdate(item);
-                setShowModal(true);
-              }}
-            >
-              <MaterialCommunityIcons name="heart" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        ))
+    <FlatList
+      data={checkinsFeed}
+      keyExtractor={(item) => item.checkin_id.toString()}
+      renderItem={({ item }) => (
+        <View style={styles.updateContainer}>
+          <Text style={styles.newsText}>
+            <Text style={styles.name}>{item.fullname}</Text> checked in to:
+          </Text>
+          <Text style={styles.questName}>{item.quest_name}</Text>
+          <Text style={styles.time}>{new Date(item.created_at).toLocaleString()}</Text>
+          <TouchableOpacity
+            style={styles.powerUpButton}
+            onPress={() => {
+              setSelectedUpdate(item);
+              setShowModal(true);
+            }}
+          >
+            <MaterialCommunityIcons name="heart" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       )}
-    </ScrollView>
+      ListEmptyComponent={<View style={styles.contentContainer}><Text style={styles.noUpdates}>No new friends' check-ins.</Text></View>}
+    />
   );
 
   return (
@@ -132,7 +143,10 @@ const SocialScreen = () => {
         </TouchableOpacity>
       </View>
       {loading ? (
-        <ActivityIndicator size="large" color="#444" style={{ flex: 1 }} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#444" />
+          <Text>Loading updates...</Text>
+        </View>
       ) : (
         <>
           {activeTab === 'quests' && renderQuests()}
@@ -152,15 +166,22 @@ const SocialScreen = () => {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>Send a Power-Up</Text>
-              {presetMessages.map((msg, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.modalButton}
-                  onPress={() => handleSendPowerUp(msg)}
-                >
-                  <Text style={styles.modalButtonText}>{msg} <MaterialCommunityIcons name="heart" size={16} color="#000" /></Text>
-                </TouchableOpacity>
-              ))}
+              {presetMessages.map((msg, index) => {
+                const icon = iconOptions[index]; // Get the corresponding icon for each message
+                const IconComponent = icon.library === 'FontAwesome' ? FontAwesome : MaterialCommunityIcons;
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.modalButton}
+                    onPress={() => handleSendPowerUp(msg)}
+                  >
+                    <Text style={styles.modalButtonText}>
+                      {msg} <IconComponent name={icon.name} size={16} color="#000" />
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: '#999' }]}
                 onPress={() => setShowModal(false)}
@@ -171,7 +192,6 @@ const SocialScreen = () => {
           </View>
         </Modal>
       )}
-
     </SafeAreaView>
   );
 };
@@ -259,21 +279,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#444',
     textAlign: 'center',
-    marginTop: 20,
+    margin: 20,
   },
   powerUpButton: {
     position: 'absolute',
     bottom: 10,
     right: 10,
     backgroundColor: '#aa0000',
-    padding: 8,
-    borderRadius: 50,
+    padding: 10,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  powerUpButtonText: {
-    color: '#000',
-    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -305,6 +321,11 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: '#000',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

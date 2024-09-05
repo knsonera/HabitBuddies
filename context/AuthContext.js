@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useMemo } from 'react';
-import { View, Text, SafeAreaView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, SafeAreaView, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 
 import { logIn, signUp, fetchUserInfo,checkTokenValidity } from '../services/apiService';
 import { getAuthToken, refreshAuthToken, setAuthToken, getUserId, clearAuthToken } from '../services/authService';
@@ -11,9 +12,15 @@ export const AuthProvider = ({ children }) => {
     const [userId, setUserId] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isConnected, setIsConnected] = useState(true); // Track network status
 
     // Initialize the authentication state when the app loads
     useEffect(() => {
+        // Listen for network status changes
+        const unsubscribe = NetInfo.addEventListener((state) => {
+            setIsConnected(state.isConnected);
+        });
+
         const initializeAuth = async () => {
             const token = await getAuthToken();
             if (token) {
@@ -37,10 +44,19 @@ export const AuthProvider = ({ children }) => {
             setIsLoading(false);
         };
         initializeAuth();
+
+        // Clean up the network listener when component unmounts
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     // Handle user login
     const logInUser = async (email, password) => {
+        if (!isConnected) {
+            Alert.alert('No Internet Connection', 'Please check your network connection and try again.');
+            return;
+        }
         try {
             const response = await logIn(email, password);
             if (response.userId) {
@@ -60,6 +76,10 @@ export const AuthProvider = ({ children }) => {
 
     // Handle user sign up
     const signUpUser = async (email, password, username, fullname) => {
+        if (!isConnected) {
+            Alert.alert('No Internet Connection', 'Please check your network connection and try again.');
+            return;
+        }
         try {
             const response = await signUp(email, password, username, fullname);
             await setAuthToken(response.token, response.refreshToken, response.userId);
@@ -83,6 +103,10 @@ export const AuthProvider = ({ children }) => {
 
     // Validate the current token and refresh it if necessary
     const validateToken = async () => {
+      if (!isConnected) {
+          Alert.alert('No Internet Connection', 'Please check your network connection and try again.');
+          return;
+      }
       if (authToken) {
         try {
           const isValid = await checkTokenValidity();
@@ -112,6 +136,10 @@ export const AuthProvider = ({ children }) => {
 
     // Function to refresh tokens manually
     const refreshTokens = async () => {
+        if (!isConnected) {
+            Alert.alert('No Internet Connection', 'Please check your network connection and try again.');
+            return;
+        }
         const newTokens = await refreshAuthToken();
         if (newTokens) {
             await setAuthToken(newTokens.token, newTokens.refreshToken, newTokens.userId);
@@ -133,8 +161,9 @@ export const AuthProvider = ({ children }) => {
         logOut,
         validateToken,
         isLoading,
-        refreshTokens
-    }), [authToken, userId, userInfo, isLoading]);
+        refreshTokens,
+        isConnected
+    }), [authToken, userId, userInfo, isLoading, isConnected]);
 
     // Provide the authentication state and functions to the app
     return (

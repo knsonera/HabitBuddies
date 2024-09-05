@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Modal, FlatList, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import avatarsData from '../assets/avatars.json'; // Import the local JSON file
+import avatarsData from '../assets/avatars.json';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -35,6 +35,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
   const checkFriendshipStatus = async () => {
     try {
+      // Load friendship status from server
       const response = await fetchFriendshipStatus(userIdToFetch);
       const status = response.status;
       setFriendshipStatus(status);
@@ -47,18 +48,18 @@ const ProfileScreen = ({ route, navigation }) => {
         setIsFriendRequestToCurrentUser(isFriendRequestToCurrentUser);
       }
     } catch (error) {
-      //console.error('Error fetching friendship status:', error);
+      Alert.alert('Error', 'Failed to fetch friendship status');
     }
   };
 
   const getFriendsData = async () => {
     setLoading(true);
     try {
+      // Load friends from server
       const friends = await fetchUserFriends(userIdToFetch);
-      //console.log('Friends List:', friends);
       setFriendsList(friends);
     } catch (error) {
-      //console.error('Failed to fetch friends list:', error);
+      Alert.alert('Error', 'Failed to fetch friends list');
     } finally {
       setLoading(false);
     }
@@ -66,8 +67,10 @@ const ProfileScreen = ({ route, navigation }) => {
 
   const getUserData = async () => {
     try {
+      // Get user info from server
       const data = await fetchUserInfo(userIdToFetch);
 
+      // Random avatar as a default
       if (!data.avatar_id) {
         const randomAvatar = avatarsData.avatars[Math.floor(Math.random() * avatarsData.avatars.length)].url;
         data.avatar_id = randomAvatar;
@@ -88,24 +91,36 @@ const ProfileScreen = ({ route, navigation }) => {
       });
 
     } catch (error) {
-      //console.error('Failed to load user data:', error);
+      Alert.alert('Error', 'Failed to load user data');
       setUserQuests({ current: [], past: [] });
     } finally {
       setLoading(false);
     }
   };
 
-  // Callback to handle text input changes
+  const isValidName = (name) => {
+    return name.length > 4;
+  };
+
+  // Callbacks to handle text input changes
   const handleFullnameChange = useCallback((text) => {
-    setUpdatedFullname(text);
+    if(isValidName(text)) {
+      setUpdatedFullname(text);
+    } else {
+      Alert.alert('Error', 'Full name must be longer than 4 characters.');
+    }
   }, []);
 
   const handleUsernameChange = useCallback((text) => {
-    setUpdatedUsername(text);
+    if(isValidName(text)) {
+      setUpdatedFullname(text);
+    } else {
+      Alert.alert('Error', 'Username must be longer than 4 characters.');
+    }
   }, []);
 
+  // Save changes to database
   const handleSaveProfile = async () => {
-      //console.log('Save button pressed');
       try {
           const updatedData = {
               fullname: updatedFullname,
@@ -116,12 +131,6 @@ const ProfileScreen = ({ route, navigation }) => {
 
           // Call the API to update the profile
           const response = await updateUserProfile(userIdToFetch, updatedData);
-
-          // Log the response to see what is returned
-          //console.log(response);
-
-          // Since the response already contains the updated data, no need to check response.ok or call response.json()
-          //console.log('Profile updated successfully:', response);
 
           // Update the local state with the new profile data
           setUserProfile((prevState) => ({
@@ -137,10 +146,11 @@ const ProfileScreen = ({ route, navigation }) => {
           setEditMode(false);
 
       } catch (error) {
-          //console.error('Failed to update profile:', error);
+          Alert.alert('Error', 'Failed to update profile');
       }
     };
 
+  // Buttons
   const renderEditButton = () => (
     <TouchableOpacity style={styles.settingsButton} onPress={() => setEditMode(true)}>
       <Icon name="cog" size={16} color="#000000" />
@@ -153,6 +163,7 @@ const ProfileScreen = ({ route, navigation }) => {
     </TouchableOpacity>
   );
 
+  // Combined all requests to server
   const getProfileContent = async () => {
     try {
         // Set loading to true at the beginning
@@ -164,29 +175,30 @@ const ProfileScreen = ({ route, navigation }) => {
           getUserData(),
           getFriendsData()
         ]);
-
     } catch (error) {
-        //console.error('Error loading data:', error);
+        Alert.alert('Error', 'Failed to load data');
     } finally {
-        // Set loading to false after all promises resolve or reject
         setLoading(false);
     }
   }
 
+  // Reloading screen when user data changes
   useEffect(() => {
     if (!userIdToFetch) {
-      //console.error('Error: User ID is undefined');
+      Alert.alert('Error', 'User ID is undefined');
     }
     getProfileContent();
 
   }, [userIdToFetch, currentUserId]);
 
+  // Friendship modal data
   useEffect(() => {
     if (modalVisible) {
       getFriendsData();
     }
   }, [modalVisible, userIdToFetch]);
 
+  // Friendship status updates
   useEffect(() => {
     if (friendshipStatus) {
       getProfileContent();
@@ -198,6 +210,7 @@ const ProfileScreen = ({ route, navigation }) => {
     return avatar ? avatar.url : null;
   };
 
+  // Friendship handlers
   const handleAddFriend = async () => {
     try {
       const response = await requestFriendship(userIdToFetch);
@@ -205,7 +218,7 @@ const ProfileScreen = ({ route, navigation }) => {
         setFriendshipStatus('pending');
       }
     } catch (error) {
-      //console.error('Error requesting friendship:', error);
+      Alert.alert('Error', 'Failed to request friendship');
     } finally {
       getProfileContent();
     }
@@ -218,7 +231,7 @@ const ProfileScreen = ({ route, navigation }) => {
         setFriendshipStatus('active');
       }
     } catch (error) {
-      //console.error('Error approving friendship:', error);
+      Alert.alert('Error', 'Failed to approve friendship');
     } finally {
       getProfileContent();
     }
@@ -235,13 +248,14 @@ const ProfileScreen = ({ route, navigation }) => {
         setFriendshipStatus('none');
       }
     } catch (error) {
-      //console.error('Error removing friendship:', error);
+      Alert.alert('Error', 'Failed to remove friendship');
     } finally {
       setConfirmationVisible(false);
       getProfileContent();
     }
   };
 
+  // Friendship Button UI
   const renderFriendshipButton = () => {
     if (isCurrentUser) {
       return (

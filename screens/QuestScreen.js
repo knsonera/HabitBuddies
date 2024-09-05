@@ -24,9 +24,7 @@ const QuestScreen = ({ route }) => {
   useEffect(() => {
     const verifyUserId = async () => {
       const id = await getUserId();
-      //console.log('Retrieved user ID:', id);
       if (!id) {
-        //console.error('User ID could not be retrieved.');
         Alert.alert('Error', 'User ID could not be retrieved.');
         return; // Stop further actions if user ID is missing
       }
@@ -86,7 +84,7 @@ const QuestScreen = ({ route }) => {
   const calculateDaysPassed = (startDate, duration) => {
     const start = new Date(startDate);
     const now = new Date();
-    const daysPassed = Math.ceil((now - start) / (1000 * 60 * 60 * 24)); // Difference in days
+    const daysPassed = Math.ceil((now - start) / (1000 * 60 * 60 * 24));
     return daysPassed;
   };
 
@@ -107,7 +105,7 @@ const QuestScreen = ({ route }) => {
         const ownerData = await fetchQuestOwner(questDetails.quest_id);
         setOwnerId(ownerData.user_id);
 
-        // Load Category using the owner's ID
+        // Load category
         const categoryData = await fetchQuestCategory(questDetails.quest_id, ownerData.user_id);
         setCategory(categoryData.category_name);
 
@@ -117,11 +115,11 @@ const QuestScreen = ({ route }) => {
         const questDaysPassed = calculateDaysPassed(questDetails.start_date, questDetails.duration);
         setDaysPassed(questDaysPassed);
 
-        // Calculate and Set Progress
+        // Calculate and set progress
         const questProgress = calculateProgress(questDetails.start_date, questDetails.duration);
         setProgress(questProgress);
 
-        // Load Participants and Set User Role
+        // Load participants and set user role
         const questParticipants = await fetchQuestParticipants(questDetails.quest_id);
         setParticipants(questParticipants);
 
@@ -129,7 +127,6 @@ const QuestScreen = ({ route }) => {
         setCheckIns(questCheckIns);
 
         const isCheckedIn = await fetchUserCheckInsForQuestToday(questDetails.quest_id, currentUserId);
-        //console.log("is checked in? ", isCheckedIn.length);
         setCheckedIn(isCheckedIn.length > 0);
 
         const currentUser = questParticipants.find(p => p.user_id === currentUserId);
@@ -140,11 +137,9 @@ const QuestScreen = ({ route }) => {
         } else {
           setUserRole(null); // User has no role
           setUserStatus(null); // Set the user status
-
         }
 
       } catch (error) {
-        //console.error('Failed to load quest data:', error);
         Alert.alert('Error', 'Failed to load quest data.');
       } finally {
         setLoading(false);
@@ -175,7 +170,6 @@ const QuestScreen = ({ route }) => {
           setParticipants(sortedParticipants);
           setModalVisible(true);
       } catch (error) {
-          //console.error('Failed to fetch participants:', error);
           Alert.alert('Error', 'Failed to fetch participants.');
       }
   };
@@ -189,8 +183,6 @@ const QuestScreen = ({ route }) => {
   };
 
   const handleVideoPress = (zoom_link) => {
-    //console.log(questDetails);
-    //console.log(zoom_link);
     if (zoom_link) {
       Linking.openURL(zoom_link).catch(err => console.error("Failed to open link: ", err));
     } else {
@@ -215,7 +207,6 @@ const QuestScreen = ({ route }) => {
             setCheckinModalVisible(false); // Close the modal after submission
             setComment(''); // Clear the comment field
         } catch (error) {
-            //console.error('Failed to submit check-in:', error);
             if (error.message.includes('You have already checked in today')) {
                 Alert.alert('Duplicate Check-In', 'You have already checked in today for this quest.');
             } else {
@@ -237,7 +228,6 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Success', 'Quest has been ended.');
       navigation.navigate('Home');
     } catch (error) {
-      //console.error('Failed to end the quest:', error);
       Alert.alert('Error', 'Failed to end the quest.');
     } finally {
       setConfirmationVisible(false); // Hide confirmation modal
@@ -250,17 +240,12 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Yay!', 'Quest is complete.');
       navigation.navigate('Home');
     } catch (error) {
-      //console.error('Failed to complete the quest:', error);
       Alert.alert('Error', 'Failed to complete the quest.');
     }
   }
 
   const handleRequestToJoin = async () => {
-    //console.log('Requesting to join quest with ID:', questDetails.quest_id);
-    //console.log('Current user ID:', currentUserId);
-
     if (!questDetails.quest_id || !currentUserId) {
-        //console.error('Missing required data: questId or userId');
         Alert.alert('Error', 'Missing required data.');
         return;
     }
@@ -270,7 +255,6 @@ const QuestScreen = ({ route }) => {
         Alert.alert('Success', 'Request to join the quest has been sent.');
         setUserStatus('pending'); // Set the status to 'pending' after request is sent
     } catch (error) {
-        //console.error('Failed to send request to join:', error);
         Alert.alert('Error', 'Failed to send request to join.');
     }
   };
@@ -283,7 +267,6 @@ const QuestScreen = ({ route }) => {
       const updatedParticipants = await fetchQuestParticipants(questId);
       setParticipants(updatedParticipants);
     } catch (error) {
-      //console.error('Failed to approve participant:', error);
       Alert.alert('Error', 'Failed to approve participant.');
     }
   };
@@ -308,7 +291,6 @@ const QuestScreen = ({ route }) => {
       setFilteredFriends(friendsList); // Initially, the filtered list is the same as the full list
       setInviteModalVisible(true);
     } catch (error) {
-      //console.error('Failed to load friends list:', error);
       Alert.alert('Error', 'Failed to load friends list.');
     }
   };
@@ -347,7 +329,7 @@ const QuestScreen = ({ route }) => {
 
     try {
       await inviteFriendToQuest(questDetails.quest_id, friendId, currentUserId);
-      Alert.alert('Success', `Invite sent to ${friendId}`);
+      Alert.alert('Success', `Invite sent!`);
       setInviteModalVisible(false); // Close the modal after inviting
     } catch (error) {
       //console.error('Failed to invite friend:', error);

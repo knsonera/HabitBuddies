@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { searchUsers } from '../services/apiService';
-import avatarsData from '../assets/avatars.json'; // Import the avatars data
+import avatarsData from '../assets/avatars.json';
 
 const SearchScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -16,8 +16,14 @@ const SearchScreen = () => {
     const handleSearch = async () => {
         setLoading(true);
         setError(null);
+        const trimmedQuery = searchQuery.trim(); // Trim spaces
+        if (!trimmedQuery) {
+            setLoading(false);
+            setSearchResults([]);
+            return;
+        }
         try {
-            const results = await searchUsers(searchQuery);
+            const results = await searchUsers(trimmedQuery);
             setSearchResults(results);
         } catch (err) {
             setError(err.message || 'Something went wrong');
@@ -33,7 +39,12 @@ const SearchScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={styles.userItem} onPress={() => navigation.navigate('Profile', { userId: item.user_id })}>
+        <TouchableOpacity
+          accessible={true}
+          accessibilityLabel={`Navigate to profile of ${item.fullname}`}
+          style={styles.userItem}
+          onPress={() => navigation.navigate('Profile', { userId: item.user_id })}
+          >
             <Image source={{ uri: getAvatarUrl(item.avatar_id) }} style={styles.avatar} />
             <View style={styles.userInfo}>
                 <Text style={styles.userFullName}>{item.fullname}</Text>
@@ -57,22 +68,39 @@ const SearchScreen = () => {
                         onSubmitEditing={handleSearch}
                         autoCapitalize="none"
                     />
-                    <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+                    <TouchableOpacity
+                        style={[styles.searchButton, !searchQuery && { backgroundColor: '#ccc' }]}
+                        onPress={handleSearch}
+                        disabled={!searchQuery}
+                    >
                         <Text style={styles.searchButtonText}>Search</Text>
                     </TouchableOpacity>
                 </View>
 
                 {loading ? (
-                    <ActivityIndicator size="large" color="#0000ff" />
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#0000ff" />
+                        <Text>Loading...</Text>
+                    </View>
                 ) : error ? (
-                    <Text style={styles.errorText}>{error}</Text>
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{error}</Text>
+                        <TouchableOpacity onPress={handleSearch}>
+                            <Text style={styles.retryText}>Retry</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : (
                     <FlatList
                         data={searchResults}
                         keyExtractor={(item) => item.user_id.toString()}
                         renderItem={renderItem}
                         contentContainerStyle={styles.searchResultsContainer}
+                        initialNumToRender={10} // Only render 10 items at first
+                        windowSize={5}
                     />
+                )}
+                {!loading && !error && searchResults.length === 0 && (
+                    <Text style={styles.notFoundText}>No users found</Text>
                 )}
             </View>
             <Footer />
@@ -128,7 +156,7 @@ const styles = StyleSheet.create({
     userItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 15,
+        paddingVertical: 20,
         paddingHorizontal: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#EEEEEE',
@@ -165,6 +193,16 @@ const styles = StyleSheet.create({
         marginTop: 20,
         fontSize: 16,
         color: '#000000',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
 });
 

@@ -34,8 +34,10 @@ const NewQuestScreen = ({ route }) => {
   const { questDetails } = route.params || {}; // Destructure the passed quest details
   const { onCreateQuest } = route.params || {};
 
-  const questIcon = iconsData.icons.find(i => i.id === questDetails.icon_id);
-
+  const questIcon = questDetails && questDetails.icon_id
+    ? iconsData.icons.find(i => i.id === questDetails.icon_id)
+    : null;
+    
   const navigation = useNavigation();
   const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
@@ -67,10 +69,29 @@ const NewQuestScreen = ({ route }) => {
     }
   }, [questDetails]);
 
-  // Validation (basic)
+  // Basic validation
+  const validateZoomLink = (link) => {
+    const regex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([/\w \.-]*)*\/?$/;
+    return regex.test(link);
+  };
+
+  const validatePositiveInteger = (value) => {
+    const num = parseInt(value, 10);
+    return !isNaN(num) && num > 0;
+  };
+
+  // Form validation
   const validateForm = () => {
     if (!name || !description || !duration) {
-      alert('Please fill all the fields.');
+      Alert.alert('Error', 'Please fill in all the fields.');
+      return false;
+    }
+    if (!validatePositiveInteger(duration)) {
+      Alert.alert('Error', 'Duration must be a positive number.');
+      return false;
+    }
+    if (zoomLink && !validateZoomLink(zoomLink)) {
+      Alert.alert('Error', 'Please enter a valid Zoom link.');
       return false;
     }
     return true;

@@ -10,32 +10,36 @@ import Footer from '../components/Footer';
 
 const PowerUpScreen = () => {
   const route = useRoute();
-  const [powerUps, setPowerUps] = useState(route.params?.powerUps || null);
+  const [powerUps, setPowerUps] = useState(route.params?.powerUps || []);
+  const [loading, setLoading] = useState(false);
 
+  // Load power ups if not provided in route.params
   useEffect(() => {
     const loadPowerUps = async () => {
-      if (!powerUps) {
+      if (powerUps.length === 0) {
+        setLoading(true);
         try {
           const fetchedPowerUps = await fetchPowerUps();
           setPowerUps(fetchedPowerUps);
         } catch (error) {
-          //console.error('Error fetching power-ups:', error);
           Alert.alert('Error', 'Failed to fetch power-ups');
+        } finally {
+          setLoading(false); // Set loading to false when done
         }
       }
     };
-
     loadPowerUps();
   }, [powerUps]);
 
+  // Mark as read and remove from the screen
   const handleMarkAsRead = async (powerUpId) => {
     try {
         await markAsReadPowerUp(powerUpId);
-
         // Remove the marked power-up from the state
-        setPowerUps((prevPowerUps) => prevPowerUps.filter((powerUp) => powerUp.power_up_id !== powerUpId));
+        setPowerUps((prevPowerUps) =>
+          prevPowerUps.filter((powerUp) => powerUp.power_up_id !== powerUpId)
+        );
     } catch (error) {
-        //console.error('Error marking power-up as read:', error);
         Alert.alert('Error', 'Failed to mark the power-up as read');
     }
   };
@@ -64,6 +68,8 @@ const PowerUpScreen = () => {
                 <TouchableOpacity
                   style={styles.markAsReadButton}
                   onPress={() => handleMarkAsRead(powerUp.power_up_id)}
+                  accessibilityLabel="Mark as read"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.markAsReadButtonText}>Mark as Read</Text>
                 </TouchableOpacity>
