@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, Modal } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -94,7 +94,7 @@ const EditQuestScreen = ({ route }) => {
               checkin_frequency: frequency !== initialQuestDetails.checkin_frequency ? frequency : initialQuestDetails.checkin_frequency,
               time: time !== initialQuestDetails.time ? time : initialQuestDetails.time,
               zoom_link: zoomLink !== initialQuestDetails.zoom_link ? zoomLink : initialQuestDetails.zoom_link,
-              icon_id: icon ? icons.indexOf(icon) : initialQuestDetails.icon_id,
+              icon_id: icon ? icon.id : initialQuestDetails.icon_id,
               start_date: new Date().toISOString(),
               end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(),
               category_id: initialQuestDetails.category_id,

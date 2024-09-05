@@ -158,7 +158,7 @@ const QuestScreen = ({ route }) => {
   // This condition determines if the timeline is complete
   const isTimelineComplete = daysPassed >= totalDays;
 
-  const icon = iconsData.icons[questDetails.icon_id];
+  const icon = iconsData.icons.find(i => i.id === questDetails.icon_id) || { name: 'star', library: 'FontAwesome' };
 
   const handleParticipantsPress = async (quest_id) => {
       try {
@@ -386,14 +386,14 @@ const QuestScreen = ({ route }) => {
       <Header />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.contentContainer}>
-          <View style={styles.headerContainer}>
+        <View style={styles.headerContainer}>
             {icon.library === 'FontAwesome' ? (
               <Icon name={icon.name} size={50} color="#000" />
             ) : (
               <MaterialCommunityIcons name={icon.name} size={50} color="#000" />
             )}
             <Text style={styles.challengeName}>{questDetails.quest_name}</Text>
-          </View>
+        </View>
 
           <View style={styles.buttonContainer}>
             {userRole === 'owner' || (userRole === 'participant' && userStatus === 'active') ? (

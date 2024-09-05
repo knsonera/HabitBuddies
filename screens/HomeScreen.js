@@ -10,7 +10,8 @@ import Footer from '../components/Footer';
 import { AuthContext } from '../context/AuthContext';
 import iconsData from '../assets/icons';
 
-const HomeScreen = () => {
+const HomeScreen = ({ route }) => {
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedQuest, setSelectedQuest] = useState(null);
   const navigation = useNavigation();
@@ -25,6 +26,8 @@ const HomeScreen = () => {
   const [hasUnreadPowerUps, setHasUnreadPowerUps] = useState(false); // State to track unread power-ups
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { reloadQuests } = route.params || {}; // If no params, fallback to {}
 
   // Load user data
   const loadUserData = async () => {
@@ -92,14 +95,23 @@ const HomeScreen = () => {
     }
   };
 
-  // Reload data if user id changes
+  // Reload quests if reloadQuests is true
   useEffect(() => {
-    loadData();
-  }, [userId]);
+    if (reloadQuests) {
+      loadUserQuests();
+    }
+  }, [reloadQuests]);
+
+  // Reload data if user id changes
+  useFocusEffect(
+    useCallback(() => {
+      loadData(); // Reload data when the screen is focused
+    }, [userId]) // Reload data whenever userId changes or screen is focused
+  );
 
   // Icons
-  const getIconById = useCallback((iconId) => {
-    return iconsData.icons[iconId];
+  const getIconById = useCallback((quest) => {
+    return iconsData.icons.find(i => i.id === quest.icon_id) || { name: 'star', library: 'FontAwesome' };
   }, []);
 
   // Check-ins
@@ -167,7 +179,7 @@ const HomeScreen = () => {
     try {
       await createQuest({ name: questName, userId });
       Alert.alert('Success', 'Quest created successfully.');
-      navigation.navigate('Home'); // Navigate back to Home after creating the quest
+      navigation.navigate('Home', { reloadQuests: true }); // Navigate back to Home after creating the quest
     } catch (error) {
       Alert.alert('Error', 'Failed to create quest.');
     }
@@ -267,7 +279,7 @@ const HomeScreen = () => {
                 <Text style={styles.sectionTitle}>Your Quests:</Text>
                 {activeQuests.map((quest) => {
                   const iconId = quest.icon_id;
-                  const icon = getIconById(iconId);
+                  const icon = getIconById(quest);
                   const checkedIn = hasCheckedInToday(quest.quest_id);
 
                   return (

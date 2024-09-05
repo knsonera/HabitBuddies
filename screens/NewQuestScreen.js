@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, Modal } from 'react-native';
+import { View, Text, TextInput, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -34,6 +34,8 @@ const NewQuestScreen = ({ route }) => {
   const { questDetails } = route.params || {}; // Destructure the passed quest details
   const { onCreateQuest } = route.params || {};
 
+  const questIcon = iconsData.icons.find(i => i.id === questDetails.icon_id);
+
   const navigation = useNavigation();
   const { authToken, userId } = useContext(AuthContext); // Use AuthContext to get the authToken and userId
   const [name, setName] = useState(questDetails ? questDetails.quest_name : '');
@@ -43,7 +45,7 @@ const NewQuestScreen = ({ route }) => {
   const [frequency, setFrequency] = useState(questDetails ? questDetails.checkin_frequency : 'daily');
   const [time, setTime] = useState(questDetails ? questDetails.time : 'evening');
   const [zoomLink, setZoomLink] = useState('');
-  const [icon, setIcon] = useState(questDetails ? questDetails.icon : null);
+  const [icon, setIcon] = useState(questIcon ? questIcon : null);
   const [modalVisible, setModalVisible] = useState(false);
   const [icons, setIcons] = useState([]);
 
@@ -51,10 +53,12 @@ const NewQuestScreen = ({ route }) => {
   const [openFrequency, setOpenFrequency] = useState(false);
   const [openTime, setOpenTime] = useState(false);
 
+  // Load icons from json
   useEffect(() => {
     setIcons(iconsData.icons);
   }, []);
 
+  // Parse quest duration
   useEffect(() => {
     if (questDetails?.duration) {
       const [dur, unit] = questDetails.duration.split(' ');
@@ -63,6 +67,7 @@ const NewQuestScreen = ({ route }) => {
     }
   }, [questDetails]);
 
+  // Validation (basic)
   const validateForm = () => {
     if (!name || !description || !duration) {
       alert('Please fill all the fields.');
@@ -71,7 +76,11 @@ const NewQuestScreen = ({ route }) => {
     return true;
   };
 
+  // Submit new quest to server
   const handleSubmit = async () => {
+      const defaultIcon = iconsData.icons.find(icon => icon.name === 'star' && icon.library === 'MaterialCommunityIcons');
+      const iconId = icon ? icon.id : defaultIcon.id;
+
       if (validateForm()) {
           const newQuest = {
             quest_name: name,
@@ -80,28 +89,30 @@ const NewQuestScreen = ({ route }) => {
             checkin_frequency: frequency,
             zoom_link: zoomLink,
             time,
-            icon_id: icon ? icons.indexOf(icon) : null, // Calculate icon_id from index
-            start_date: new Date().toISOString(), // Use the current date for start_date
+            icon_id: iconId,
+            start_date: new Date().toISOString(),
             end_date: new Date(new Date().getTime() + parseInt(duration) * 24 * 60 * 60 * 1000).toISOString(), // Calculate end date
             category_id: 1,
             status: 'active', // Default status
-            created_by: userId // Include userId as created_by
+            created_by: userId
           };
 
           try {
+              // Send data to server
               await createQuest(newQuest);
-              alert('Quest started successfully!');
+              Alert.alert('Success!','Quest started successfully!');
               if (onCreateQuest) {
                   onCreateQuest(questData, loadUserQuests); // Call the function after creating the quest
               }
-              navigation.navigate('Home');
+              // Redirect to HomeScreen
+              navigation.navigate('Home', { reloadQuests: true });
           } catch (error) {
-              //console.error('Failed to start a quest:', error);
-              alert('Failed to start a quest.');
+              Alert.alert('Error','Failed to start a quest.');
           }
       }
   };
 
+  // Render icon depending on library
   const renderIcon = (icon) => {
     if (icon.library === 'FontAwesome') {
       return <FontAwesome name={icon.name} size={24} color="black" />;
@@ -110,6 +121,7 @@ const NewQuestScreen = ({ route }) => {
     }
   };
 
+  // New Quest Form
   const renderForm = () => (
     <View style={styles.contentContainer}>
       <Text style={styles.title}>New Quest</Text>
