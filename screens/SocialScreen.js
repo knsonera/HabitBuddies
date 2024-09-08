@@ -240,17 +240,10 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   updateContainer: {
-    marginBottom: 10,
     padding: 15,
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
-    borderColor: '#E8E8E8',
+    backgroundColor: '#ccc',
     borderWidth: 1,
+    borderColor: '#ddd',
     position: 'relative',
     paddingBottom: 35,
   },
@@ -272,7 +265,7 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 14,
-    color: '#999999',
+    color: '#000',
     marginTop: 5,
   },
   noUpdates: {

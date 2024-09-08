@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
 import { getUserId } from '../services/authService';
-import { endQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, handleAcceptInvite, handleDeclineInvite, createCheckIn, fetchQuestCheckIns, fetchUserCheckInsForQuestToday } from '../services/apiService';
+import { endQuest, completeQuest, fetchQuestParticipants, fetchQuestCategory, fetchQuestOwner, requestToJoinQuest, approveParticipant, removeParticipant, fetchUserFriends, inviteFriendToQuest, acceptQuestInvite, declineQuestInvite, createCheckIn, fetchQuestCheckIns, fetchUserCheckInsForQuestToday } from '../services/apiService';
 import iconsData from '../assets/icons';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -295,6 +295,39 @@ const QuestScreen = ({ route }) => {
     }
   };
 
+  const handleAcceptInvite = async (quest_id) => {
+    try {
+      await acceptQuestInvite(quest_id);
+      Alert.alert('Success', 'You have successfully joined the quest.');
+      // Update user status and reload quest details
+      setUserStatus('active');
+
+      // Optionally reload participants or quest details to update UI
+      const updatedParticipants = await fetchQuestParticipants(quest_id);
+      setParticipants(updatedParticipants);
+
+    } catch (error) {
+      Alert.alert('Error', 'Failed to accept the invite.');
+    }
+  };
+
+  const handleDeclineInvite = async (quest_id) => {
+    try {
+      await declineQuestInvite(quest_id);
+      Alert.alert('Success', 'You have declined the quest invite.');
+
+      // Set status to null or any appropriate state
+      setUserStatus(null);
+
+      // Optionally reload participants or quest details to update UI
+      const updatedParticipants = await fetchQuestParticipants(quest_id);
+      setParticipants(updatedParticipants);
+
+    } catch (error) {
+      Alert.alert('Error', 'Failed to decline the invite.');
+    }
+  };
+
   const handleSearchChange = (query) => {
     setSearchQuery(query);
     if (query.trim() === '') {
@@ -309,12 +342,7 @@ const QuestScreen = ({ route }) => {
   };
 
   const handleInviteFriend = async (friendId) => {
-    //console.log('Inviting friend with ID:', friendId);
-    //console.log('Current quest ID:', questDetails.quest_id);
-    //console.log('Current user ID:', currentUserId);
-
     if (!friendId || !questDetails.quest_id || !currentUserId) {
-      //console.error('Missing required data: friendId, questId, or currentUserId');
       Alert.alert('Error', 'Missing required data.');
       return;
     }
@@ -332,7 +360,6 @@ const QuestScreen = ({ route }) => {
       Alert.alert('Success', `Invite sent!`);
       setInviteModalVisible(false); // Close the modal after inviting
     } catch (error) {
-      //console.error('Failed to invite friend:', error);
       Alert.alert('Error', 'Failed to invite friend.');
     }
   };
@@ -420,14 +447,14 @@ const QuestScreen = ({ route }) => {
               <View style={styles.inviteActions}>
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => handleAcceptInvite(quest.quest_id)}
+                  onPress={() => handleAcceptInvite(questDetails.quest_id)}
                 >
                   <MaterialCommunityIcons name="plus" size={20} color="#000" />
                   <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => handleDeclineInvite(quest.quest_id)}
+                  onPress={() => handleDeclineInvite(questDetails.quest_id)}
                 >
                   <MaterialCommunityIcons name="close" size={20} color="#000" />
                   <Text style={styles.buttonText}>Decline</Text>
@@ -1035,6 +1062,23 @@ const styles = StyleSheet.create({
     color: '#333',
     marginVertical: 10,
   },
+  completeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    backgroundColor: '#cfc',
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 10,
+    paddingHorizontal: 40,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  }
 });
 
 export default QuestScreen;

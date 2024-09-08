@@ -33,11 +33,9 @@ export const AuthProvider = ({ children }) => {
                         const userInfo = await fetchUserInfo(storedUserId);
                         setUserInfo(userInfo);
                     } catch (error) {
-                        console.error('AuthProvider - Error fetching user info:', error);
                         await logOut(); // Log out if fetching user info fails
                     }
                 } else {
-                    console.error('AuthProvider - No userId found, logging out');
                     await logOut();
                 }
             }
@@ -66,10 +64,10 @@ export const AuthProvider = ({ children }) => {
                 const userInfo = await fetchUserInfo(response.userId);
                 setUserInfo(userInfo);
             } else {
-                console.error('User ID is missing in the login response');
+                //console.error('User ID is missing in the login response');
             }
         } catch (error) {
-            console.error('Login failed:', error);
+            //console.error('Login failed:', error);
             throw error;
         }
     };
@@ -88,7 +86,6 @@ export const AuthProvider = ({ children }) => {
             const userInfo = await fetchUserInfo(response.userId);
             setUserInfo(userInfo);
         } catch (error) {
-            console.error('Sign-up failed:', error);
             throw error;
         }
     };
@@ -127,7 +124,6 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           await logOut(); // Log out if token refresh fails
           Alert.alert('Session expired', 'Please log in again.'); // Show an alert for better user feedback
-          console.error('Token validation failed:', error);
           return false;
         }
       }

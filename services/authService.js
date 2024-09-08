@@ -5,8 +5,8 @@ let authToken = null;
 let refreshToken = null;
 let userId = null;
 
-const BASE_URL = 'https://www.uzhvieva.com:443';
-//const BASE_URL = 'http://localhost:3000';
+//const BASE_URL = 'https://www.uzhvieva.com:443';
+const BASE_URL = 'http://localhost:3000';
 
 // Set authentication token
 export const setAuthToken = async (token, refresh, user) => {

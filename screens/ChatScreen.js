@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Keyboard, KeyboardAvoidingView, Platform, Animated, Alert } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { fetchMessages, sendMessage } from '../services/apiService';
 import Header from '../components/Header';
@@ -112,7 +112,9 @@ const ChatScreen = ({ route }) => {
                             if (!messageExists) {
                                 const updatedMessages = [...prevMessages, message];
                                 if (updatedMessages.length > 0) {
-                                    flatListRef.current.scrollToEnd({ animated: true });
+                                  if (flatListRef.current) {
+                                      flatListRef.current.scrollToEnd({ animated: true });
+                                  }
                                 }
                                 return updatedMessages;
                             }
@@ -121,14 +123,12 @@ const ChatScreen = ({ route }) => {
                     }
                 } else if (Array.isArray(event.data) && event.data.length === 0) {
                     // TODO: empty array error handling
-                    //console.warn('Received empty array');
                 } else {
                     // TODO: invalid data handling
-                    //console.warn('Received invalid data');
                 }
             };
 
-            socket.onerror = error => console.error('WebSocket error:', error);
+            socket.onerror = error => Alert.alert('WebSocket error:', error);
 
             socket.onclose = () => {
                 reconnectAttempts++;

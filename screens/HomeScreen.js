@@ -276,7 +276,7 @@ const HomeScreen = ({ route }) => {
 
             {activeQuests.length > 0 && (
               <>
-                <Text style={styles.sectionTitle}>Your Quests:</Text>
+                <Text style={styles.sectionTitle}>Active Quests:</Text>
                 {activeQuests.map((quest) => {
                   const iconId = quest.icon_id;
                   const icon = getIconById(quest);
