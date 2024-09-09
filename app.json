@@ -32,12 +32,10 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.habitbuddies.app",
+      "usesCleartextTraffic": true,
       "permissions": [
-        "WAKE_LOCK",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "CAMERA",
-        "ACCESS_FINE_LOCATION"
       ],
       "intentFilters": [
         {
